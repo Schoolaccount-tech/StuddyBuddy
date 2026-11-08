@@ -50,7 +50,7 @@ export default function Home() {
   const [sound, setSnd] = useState(true); const [accent, setAccent] = useState('owl'); const [mode, setMode] = useState<'auto' | 'light' | 'dark'>('auto')
   const [lvUp, setLvUp] = useState<{ e: string; n: string } | null>(null); const [help, setHelp] = useState(false); const [inst, setInst] = useState<any>(null); const [planTab, setPlanTab] = useState<'tasks' | 'time'>('tasks')
   const [tip, setTip] = useState(TIPS[0]); const [days, setDays] = useState<number | null>(null)
-  const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false); const [board, setBoard] = useState(false)
+  const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false); const [board, setBoard] = useState(false); const [rb, setRb] = useState(false); const [spin, setSpin] = useState(false); const crestN = useRef(0)
   const tabsRef = useRef<HTMLDivElement>(null); const [ind, setInd] = useState({ l: 0, w: 0 })
   const dir = TABS.findIndex(t => t[0] === tab) >= prevTab.current ? 'r' : 'l'
 
@@ -58,6 +58,7 @@ export default function Home() {
     const s = store.get('subj', ''); if (s && SUBJ[s]) setSubj(s)
     setTip(TIPS[Math.floor(Date.now() / 864e5) % TIPS.length]); const ex = store.get('exam', ''); setDays(ex ? Math.ceil((new Date(ex + 'T00:00:00').getTime() - Date.now()) / 864e5) : null)
     const c = store.get<Partial<Cfg>>('cfg', {}); if (c && typeof c === 'object') { const n = { trail: (c.trail as Trail) || 'sparkle', party: !!c.party, crown: !!c.crown }; cfgRef.current = n; setCfgS(n) }
+    const rbo = store.get('rainbow', false); setRb(!!rbo); if (rbo) document.documentElement.dataset.rainbow = '1'
     const bd = store.get('board', false); setBoard(!!bd); if (bd) document.documentElement.dataset.board = '1'
     const l = load(); pRef.current = l; setP(l); setSnd(soundOn())
     const a = store.get('accent', 'owl'); setAccent(a); document.documentElement.dataset.accent = a
@@ -99,6 +100,7 @@ export default function Home() {
   function patch(f: (p: Prog) => Prog) { const n = f(pRef.current); pRef.current = n; setP(n); save(n) }
   function award(ev: Ev) {
     const r = apply(pRef.current, ev); pRef.current = r.p; setP(r.p); save(r.p)
+    if (r.xp > 0) floatXP(r.xp)
     if (r.xp >= 5 && ev.k !== 'bonus') toast('✨', `+${r.xp} XP`)
     r.questsDone.forEach((q, i) => setTimeout(() => { toast('🎯', 'Quest complete!', `${q.t} · +${q.xp} XP`, true); sfx('good') }, 400 + i * 700))
     if (r.leveled >= 0) { const L = LEVELS[r.leveled]; setLvUp({ e: L.e, n: L.n }); celebrate('fireworks'); sfx('level'); say(`You are now a ${L.n}!`) }
@@ -113,7 +115,9 @@ export default function Home() {
   function setCfg(c: Partial<Cfg>) { const n = { ...cfgRef.current, ...c }; cfgRef.current = n; setCfgS(n); store.set('cfg', n) }
   function toggleBoard() { const n = !board; setBoard(n); store.set('board', n); if (n) document.documentElement.dataset.board = '1'; else delete document.documentElement.dataset.board; sfx('pop'); say(n ? 'Big screen mode on 📺' : 'Big screen mode off', 'cheer', 2500) }
   function fullscreen() { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen() } catch {} }
-  function rainbow() { const h = document.documentElement; h.dataset.rainbow = h.dataset.rainbow ? '' : '1'; celebrate('fireworks'); sfx('level'); say(h.dataset.rainbow ? 'Rainbow mode unlocked! 🌈' : 'Rainbow mode off', 'cheer', 4000); award({ k: 'bonus', xp: 5 }) }
+  function rainbow() { const n = !document.documentElement.dataset.rainbow; setRb(n); store.set('rainbow', n); if (n) document.documentElement.dataset.rainbow = '1'; else delete document.documentElement.dataset.rainbow; celebrate(n ? 'fireworks' : 'stars', '🌈'); sfx(n ? 'level' : 'pop'); say(n ? 'Rainbow mode ON! 🌈' : 'Rainbow mode off', 'cheer', 3500); if (n) award({ k: 'bonus', xp: 5 }) }
+  function crestClick() { setSpin(true); setTimeout(() => setSpin(false), 900); sfx('pop'); crestN.current++; if (crestN.current >= 5) { crestN.current = 0; rainbow() } }
+  function floatXP(n: number) { try { const el = document.querySelector('.xp'); if (!el) return; const r = el.getBoundingClientRect(), d = document.createElement('div'); d.className = 'xpfloat'; d.textContent = `+${n} XP`; d.style.left = r.left + r.width / 2 + 'px'; d.style.top = r.bottom + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1500) } catch {} }
   function toggleSound() { setSnd(s => { setSound(!s); if (!s) sfx('pop'); return !s }) }
   function changeTab(t: Tab) { prevTab.current = TABS.findIndex(x => x[0] === tab); setTab(t); sfx('pop'); if (t !== 'focus') noise(false); if (cfgRef.current.party) confetti(0.5) }
   function cycleMode() { const n = mode === 'auto' ? 'dark' : mode === 'dark' ? 'light' : 'auto'; setMode(n); store.set('mode', n); if (n === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = n }
@@ -140,7 +144,7 @@ export default function Home() {
 
   return <>
     <Intro />
-    <div className="aurora" aria-hidden><i /><i /><i /></div><Starfield /><CursorTrail kind={cfg.trail} /><Ripple /><Konami onHit={rainbow} />
+    <div className="aurora" aria-hidden><i /><i /><i /></div><Starfield /><CursorTrail kind={rb ? 'rainbow' : cfg.trail} /><div className="rb-bar" aria-hidden /><Ripple /><Konami onHit={rainbow} />
     {pal && <Palette cmds={cmds} onClose={() => setPal(false)} />}
     {lvUp && <LevelUp e={lvUp.e} n={lvUp.n} onClose={() => setLvUp(null)} />}
     {help && <div className="help" onClick={() => setHelp(false)} role="dialog" aria-label="Keyboard shortcuts"><div className="help-in" onClick={e => e.stopPropagation()}><h3>Keyboard shortcuts</h3>
@@ -148,8 +152,8 @@ export default function Home() {
     <div className="toasts" aria-live="polite">{toasts.map(t => <div key={t.id} className={'toast' + (t.big ? ' big' : '')}><span className="te">{t.e}</span><div><b>{t.title}</b>{t.sub && <small>{t.sub}</small>}</div></div>)}</div>
     <div className="wrap">
       <header>
-        <img className="crest" src="/logo.png" alt="Wise Owl School crest" />
-        <div><small className={cfg.crown ? 'crown' : ''}>Wise Owl School · Westgate{p.nick ? ` · Hi, ${p.nick}!` : ''}</small><h1>IGCSE Study Buddy</h1></div>
+        <img className={'crest' + (spin ? ' spin' : '')} src="/logo.png" alt="Wise Owl School crest" onClick={crestClick} />
+        <div><small className={cfg.crown ? 'crown' : ''}>Wise Owl School · Westgate{p.nick ? ` · Hi, ${p.nick}!` : ''}</small><h1 className="title">IGCSE Study Buddy</h1></div>
         <div className="stats">
           <button className="xp glow" onClick={() => changeTab('me')} aria-label="Your level and progress"><span className="lvl">{cur.e}</span><span><b>{cur.n}</b><span className="xpbar"><i style={{ width: pct + '%' }} /></span></span><span className="xpn"><CountUp to={p.xp} /> XP</span></button>
           <span className="pill"><span className={'flame' + (streak ? ' on' : '')}>🔥</span> {streak}-day streak</span>
@@ -164,6 +168,7 @@ export default function Home() {
         {spinReady && <button className="gift" onClick={() => changeTab('me')} aria-label="Daily spin is ready">🎁</button>}
         {inst && <button onClick={() => { inst.prompt(); setInst(null) }} aria-label="Install as an app">📲</button>}
         <button onClick={() => setPal(true)} aria-label="Open command palette" title="Ctrl+K">🔎</button>
+        <button className={'rbbtn' + (rb ? ' on' : '')} onClick={rainbow} aria-label="Rainbow mode" aria-pressed={rb} title="Rainbow mode">🌈</button>
         <button className={board ? 'on' : ''} onClick={toggleBoard} aria-label="Big screen mode for smartboards" aria-pressed={board} title="Big screen mode">📺</button>
         <button onClick={fullscreen} aria-label="Toggle fullscreen">🖥️</button>
         <button onClick={() => setHelp(true)} aria-label="Keyboard shortcuts">⌨️</button>

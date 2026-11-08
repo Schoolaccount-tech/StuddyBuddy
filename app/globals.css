@@ -316,8 +316,6 @@ html[data-accent="lime"]{--owl:#a3e635;--owl-ink:#1a2e05}
 @keyframes rip{to{transform:scale(1);opacity:0}}
 .crown{background:linear-gradient(90deg,#b8860b,#ffd700,#fff5b0,#ffd700,#b8860b);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:goldsh 3s linear infinite}
 @keyframes goldsh{to{background-position:200% center}}
-html[data-rainbow="1"] body{animation:rainbowhue 6s linear infinite}
-@keyframes rainbowhue{to{filter:hue-rotate(360deg)}}
 .grow{flex:1 1 200px;min-width:0;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--bg)}
 .center{text-align:center;display:grid;gap:12px;justify-items:center;padding:8px 0}
 .game{animation:rise .4s both;margin-top:16px}
@@ -469,3 +467,49 @@ footer{padding-bottom:max(18px,env(safe-area-inset-bottom,0px))}
 @media (max-width:380px){.mem{grid-template-columns:repeat(2,1fr)}.wall{grid-template-columns:1fr}.pt{grid-template-columns:repeat(5,1fr)}}
 /* Phone held sideways or short screens */
 @media (max-height:520px) and (orientation:landscape){.sky,.ticker{display:none}.panel{min-height:240px}.mascot{display:none}}
+
+/* ===== Round 5: rainbow mode and cooler animations ===== */
+@property --rh{syntax:'<number>';inherits:true;initial-value:0}
+@keyframes rbhue{to{--rh:360}}
+html[data-rainbow="1"]{animation:rbhue 7s linear infinite;--owl:hsl(var(--rh) 95% 58%);--owl-ink:#10122a;--tint:hsl(var(--rh) 90% 90% / .35)}
+html[data-rainbow="1"] .aurora i{filter:hue-rotate(calc(var(--rh) * 1deg)) saturate(1.8)}
+html[data-rainbow="1"] .title{background-image:linear-gradient(90deg,#ff0040,#ff9a00,#ffe600,#2bff88,#00c8ff,#7a5cff,#ff3df2,#ff0040);background-size:300% 100%}
+html[data-rainbow="1"] .panel,html[data-rainbow="1"] .daily,html[data-rainbow="1"] .quote,html[data-rainbow="1"] .wotd{border-color:transparent;background:linear-gradient(var(--surface),var(--surface)) padding-box,conic-gradient(from calc(var(--rh) * 1deg),#ff0040,#ffe600,#2bff88,#00c8ff,#ff3df2,#ff0040) border-box;border:2px solid transparent}
+html[data-rainbow="1"] .btn:not(.ghost){background:linear-gradient(90deg,hsl(var(--rh) 95% 58%),hsl(calc(var(--rh) + 70) 95% 58%))}
+html[data-rainbow="1"] .tab[aria-selected="true"]{border-bottom-color:var(--owl)}
+.rb-bar{position:fixed;left:0;right:0;top:0;height:5px;z-index:70;background:linear-gradient(90deg,#ff0040,#ff9a00,#ffe600,#2bff88,#00c8ff,#7a5cff,#ff3df2,#ff0040);background-size:200% 100%;transform:scaleY(0);transform-origin:top;transition:transform .5s cubic-bezier(.2,1.4,.4,1);animation:rbslide 3s linear infinite}
+html[data-rainbow="1"] .rb-bar{transform:scaleY(1)}
+@keyframes rbslide{to{background-position:200% 0}}
+.rbbtn.on{box-shadow:0 0 0 3px var(--owl),0 0 18px var(--owl)}
+/* title shimmer */
+.title{background-image:linear-gradient(90deg,var(--ink) 0%,var(--ink) 40%,var(--owl) 50%,var(--ink) 60%,var(--ink) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:titlesh 5s ease-in-out infinite}
+@keyframes titlesh{0%{background-position:120% 0}60%,100%{background-position:-120% 0}}
+html[data-rainbow="1"] .title{animation:titlesh 3s linear infinite}
+/* crest spin and glow */
+.crest{cursor:pointer;transition:box-shadow .3s}.crest:hover{box-shadow:0 0 0 3px var(--owl),0 0 24px var(--owl)}
+.crest.spin{animation:crestspin .9s cubic-bezier(.3,1.4,.5,1)}@keyframes crestspin{from{transform:rotate(0) scale(1)}50%{transform:rotate(360deg) scale(1.25)}to{transform:rotate(720deg) scale(1)}}
+/* floating XP */
+.xpfloat{position:fixed;z-index:9000;transform:translate(-50%,0);font:800 22px var(--display);color:var(--owl);text-shadow:0 2px 0 #0003,0 0 14px var(--owl);pointer-events:none;animation:xpup 1.4s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes xpup{0%{opacity:0;transform:translate(-50%,0) scale(.5)}15%{opacity:1;transform:translate(-50%,-10px) scale(1.3)}100%{opacity:0;transform:translate(-50%,-70px) scale(1)}}
+/* staggered entrance for everything inside a panel and the header controls */
+.panel>*,.game>*{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+.panel>*:nth-child(2){animation-delay:.05s}.panel>*:nth-child(3){animation-delay:.1s}.panel>*:nth-child(4){animation-delay:.15s}.panel>*:nth-child(5){animation-delay:.2s}
+.ctl>*{animation:ctlpop .5s cubic-bezier(.2,1.6,.4,1) both}
+.ctl>*:nth-child(2){animation-delay:.04s}.ctl>*:nth-child(3){animation-delay:.08s}.ctl>*:nth-child(4){animation-delay:.12s}.ctl>*:nth-child(5){animation-delay:.16s}.ctl>*:nth-child(6){animation-delay:.2s}.ctl>*:nth-child(7){animation-delay:.24s}.ctl>*:nth-child(8){animation-delay:.28s}.ctl>*:nth-child(9){animation-delay:.32s}.ctl>*:nth-child(10){animation-delay:.36s}.ctl>*:nth-child(n+11){animation-delay:.4s}
+@keyframes ctlpop{from{opacity:0;transform:scale(0) rotate(-90deg)}}
+header{animation:hdrdrop .7s cubic-bezier(.2,1.3,.4,1) both}@keyframes hdrdrop{from{opacity:0;transform:translateY(-30px)}}
+/* living XP bar, hot streak flame, tab hover */
+.xpbar i{background:linear-gradient(90deg,var(--owl),#ff8fb1,var(--owl));background-size:200% 100%;animation:xpflow 2.4s linear infinite}@keyframes xpflow{to{background-position:-200% 0}}
+.tab{transition:color .2s,transform .2s}.tab:hover{transform:translateY(-3px);color:var(--ink)}
+.tab-ind{box-shadow:0 0 18px var(--owl);transition:left .45s cubic-bezier(.2,1.2,.3,1),width .45s cubic-bezier(.2,1.2,.3,1)}
+.chip[aria-pressed="true"]{animation:pop .35s both}
+/* mascot shadow bob and card lift */
+.mascot img{animation:mbob 3.2s ease-in-out infinite}@keyframes mbob{50%{transform:translateY(-5px)}}
+.mascot.cheer img,.mascot.think img{animation-name:hop}
+.quote,.wotd,.best,.shop-i,.wall-i,.gl-i{transition:transform .25s cubic-bezier(.2,1.4,.4,1),box-shadow .25s}
+.quote:hover,.wotd:hover,.best:hover,.shop-i:hover,.gl-i:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 14px 30px #0002}
+/* floating orbs in the background */
+.aurora i{animation-duration:14s}
+.stars{opacity:.9}
+@media (prefers-reduced-motion:reduce){.panel>*,.game>*,.ctl>*,header,.title,.xpbar i,.mascot img,.rb-bar,.rbbtn.on{animation:none}html[data-rainbow="1"]{animation:none}}
+.ctl .gift{animation:ctlpop .5s cubic-bezier(.2,1.6,.4,1) both,giftp 1.6s 1s ease-in-out infinite}
