@@ -19,6 +19,8 @@ function Typed({ text, fresh, onTick }: { text: string; fresh: boolean; onTick: 
 }
 
 export default function Ask({ api, onMood }: { api: Api; onMood: (m: 'idle' | 'think') => void }) {
+  const [canMic, setCanMic] = useState(false)
+  useEffect(() => { setCanMic(canListen()) }, [])
   const [log, setLog] = useState<Msg[]>([{ role: 'assistant', content: "Hi, I'm Wise Owl 🦉 Ask me anything about your IGCSE subject. I explain step by step and show you how marks are earned in the exam." }])
   const [q, setQ] = useState(''); const [busy, setBusy] = useState(false); const [style, setStyle] = useState<string>('exam'); const [mic, setMic] = useState(false)
   const end = useRef<HTMLDivElement>(null); const stop = useRef<(() => void) | null>(null)
@@ -46,7 +48,7 @@ export default function Ask({ api, onMood }: { api: Api; onMood: (m: 'idle' | 't
       {busy && <div className="msg ai"><span className="typing"><i /><i /><i /></span></div>}<div ref={end} /></div>
     <form className="ask" onSubmit={send}>
       <textarea rows={2} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} placeholder={mic ? 'Listening…' : 'Type your question…'} aria-label="Your question" />
-      {canListen() && <button type="button" className={'mic' + (mic ? ' on' : '')} onClick={toggleMic} aria-label="Speak your question">🎤</button>}
+      {canMic && <button type="button" className={'mic' + (mic ? ' on' : '')} onClick={toggleMic} aria-label="Speak your question">🎤</button>}
       <button className="btn" disabled={busy}>Ask</button></form>
   </section>
 }
