@@ -17,7 +17,12 @@ import Focus from '@/components/Focus'
 import Tools from '@/components/Tools'
 import Me from '@/components/Me'
 import CountUp from '@/components/CountUp'
-import type { Api } from '@/components/api'
+import Play from '@/components/Play'
+import Lab from '@/components/Lab'
+import Track from '@/components/Track'
+import Palette, { type Cmd } from '@/components/Palette'
+import { CursorTrail, Ripple, Konami, Sky, Ticker, Daily, type Trail } from '@/components/Extras'
+import type { Api, Cfg } from '@/components/api'
 
 const SUBJ: Record<string, string> = {
   'Mathematics': 'Show every step of working. Method marks are given even when the final answer is wrong, so never skip lines.',
@@ -33,9 +38,9 @@ const SUBJ: Record<string, string> = {
   'Accounting': 'Lay out ledgers and statements neatly and label every line. Check that the totals balance.',
 }
 type Toast = { id: number; e: string; title: string; sub: string; big: boolean }
-const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['me', 'Progress']] as const
+const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['me', 'Progress']] as const
 type Tab = typeof TABS[number][0]
-const ACCENTS = [['owl', '#f2c500'], ['ocean', '#38bdf8'], ['sunset', '#fb7185'], ['forest', '#4ade80']] as const
+const ACCENTS = [['owl', '#f2c500'], ['ocean', '#38bdf8'], ['sunset', '#fb7185'], ['forest', '#4ade80'], ['violet', '#a78bfa'], ['mint', '#2dd4bf'], ['lava', '#fb923c'], ['lime', '#a3e635']] as const
 
 export default function Home() {
   const [subj, setSubj] = useState('Mathematics'); const [topic, setTopic] = useState(''); const [tab, setTab] = useState<Tab>('ask'); const prevTab = useRef(0)
@@ -45,12 +50,14 @@ export default function Home() {
   const [sound, setSnd] = useState(true); const [accent, setAccent] = useState('owl'); const [mode, setMode] = useState<'auto' | 'light' | 'dark'>('auto')
   const [lvUp, setLvUp] = useState<{ e: string; n: string } | null>(null); const [help, setHelp] = useState(false); const [inst, setInst] = useState<any>(null); const [planTab, setPlanTab] = useState<'tasks' | 'time'>('tasks')
   const [tip, setTip] = useState(TIPS[0]); const [days, setDays] = useState<number | null>(null)
+  const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false)
   const tabsRef = useRef<HTMLDivElement>(null); const [ind, setInd] = useState({ l: 0, w: 0 })
   const dir = TABS.findIndex(t => t[0] === tab) >= prevTab.current ? 'r' : 'l'
 
   useEffect(() => {
     const s = store.get('subj', ''); if (s && SUBJ[s]) setSubj(s)
     setTip(TIPS[Math.floor(Date.now() / 864e5) % TIPS.length]); const ex = store.get('exam', ''); setDays(ex ? Math.ceil((new Date(ex + 'T00:00:00').getTime() - Date.now()) / 864e5) : null)
+    const c = store.get<Partial<Cfg>>('cfg', {}); if (c && typeof c === 'object') { const n = { trail: (c.trail as Trail) || 'sparkle', party: !!c.party, crown: !!c.crown }; cfgRef.current = n; setCfgS(n) }
     const l = load(); pRef.current = l; setP(l); setSnd(soundOn())
     const a = store.get('accent', 'owl'); setAccent(a); document.documentElement.dataset.accent = a
     const m = store.get<'auto' | 'light' | 'dark'>('mode', 'auto'); setMode(m); if (m !== 'auto') document.documentElement.dataset.theme = m
@@ -76,11 +83,12 @@ export default function Home() {
   // Keyboard shortcuts.
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPal(o => !o); return }
       const t = e.target as HTMLElement; if (/INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable || e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === '?') setHelp(h => !h)
-      else if (e.key === 'Escape') setHelp(false)
+      else if (e.key === 'Escape') { setHelp(false); setPal(false) }
       else if (e.key === 'm') toggleSound()
-      else if (/^[1-8]$/.test(e.key)) changeTab(TABS[+e.key - 1][0])
+      else if (/^[1-9]$/.test(e.key)) changeTab(TABS[+e.key - 1][0])
     }
     addEventListener('keydown', kd); return () => removeEventListener('keydown', kd)
   }) // eslint-disable-line
@@ -101,28 +109,44 @@ export default function Home() {
     award({ k: 'quiz', subject: subj, right, total, combo })
     if (right / total >= 0.6) { if (right === total) celebrate('fireworks'); else confetti(1.1); sfx('win'); say(right === total ? 'Perfect score! 🏆' : 'Brilliant work!') } else say('Good effort. Check your mistakes and go again.', 'think', 5000)
   }
+  function setCfg(c: Partial<Cfg>) { const n = { ...cfgRef.current, ...c }; cfgRef.current = n; setCfgS(n); store.set('cfg', n) }
+  function fullscreen() { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen() } catch {} }
+  function rainbow() { const h = document.documentElement; h.dataset.rainbow = h.dataset.rainbow ? '' : '1'; celebrate('fireworks'); sfx('level'); say(h.dataset.rainbow ? 'Rainbow mode unlocked! 🌈' : 'Rainbow mode off', 'cheer', 4000); award({ k: 'bonus', xp: 5 }) }
   function toggleSound() { setSnd(s => { setSound(!s); if (!s) sfx('pop'); return !s }) }
-  function changeTab(t: Tab) { prevTab.current = TABS.findIndex(x => x[0] === tab); setTab(t); sfx('pop'); if (t !== 'focus') noise(false) }
+  function changeTab(t: Tab) { prevTab.current = TABS.findIndex(x => x[0] === tab); setTab(t); sfx('pop'); if (t !== 'focus') noise(false); if (cfgRef.current.party) confetti(0.5) }
   function cycleMode() { const n = mode === 'auto' ? 'dark' : mode === 'dark' ? 'light' : 'auto'; setMode(n); store.set('mode', n); if (n === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = n }
 
-  const api: Api = { p, patch, award, say, toast, subj, topic }
+  const api: Api = { p, patch, award, say, toast, subj, topic, cfg, setCfg }
   const lv = levelOf(p.xp), cur = LEVELS[lv], nxt = LEVELS[lv + 1]
   const pct = nxt ? Math.round(((p.xp - cur.xp) / (nxt.xp - cur.xp)) * 100) : 100
   const goalN = p.goal.d === dayKey() ? Math.min(GOAL, p.goal.n) : 0; const streak = liveStreak(p)
   const sessToday = p.today.d === dayKey() ? p.today.sessions : 0
     const spinReady = p.spin !== dayKey()
 
+  const cmds: Cmd[] = [
+    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
+    ...Object.keys(SUBJ).map(n => ({ id: 's' + n, e: '📚', label: `Subject: ${n}`, hint: 'subject', run: () => { setSubj(n); store.set('subj', n); sfx('pop') } })),
+    ...ACCENTS.map(([n]) => ({ id: 'a' + n, e: '🎨', label: `Theme: ${n}`, hint: 'colour', run: () => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') } })),
+    { id: 'snd', e: sound ? '🔇' : '🔊', label: sound ? 'Mute sounds' : 'Turn sounds on', run: toggleSound },
+    { id: 'mode', e: '🌗', label: 'Switch light / dark mode', hint: 'dark light', run: cycleMode },
+    { id: 'fs', e: '🖥️', label: 'Toggle fullscreen', run: fullscreen },
+    { id: 'rb', e: '🌈', label: 'Rainbow mode', hint: 'party', run: rainbow },
+    { id: 'br', e: '🌬️', label: 'Breathe (calm down)', hint: 'lab relax', run: () => changeTab('lab') },
+    { id: 'help', e: '⌨️', label: 'Keyboard shortcuts', run: () => setHelp(true) },
+  ]
+
   return <>
     <Intro />
-    <div className="aurora" aria-hidden><i /><i /><i /></div><Starfield />
+    <div className="aurora" aria-hidden><i /><i /><i /></div><Starfield /><CursorTrail kind={cfg.trail} /><Ripple /><Konami onHit={rainbow} />
+    {pal && <Palette cmds={cmds} onClose={() => setPal(false)} />}
     {lvUp && <LevelUp e={lvUp.e} n={lvUp.n} onClose={() => setLvUp(null)} />}
     {help && <div className="help" onClick={() => setHelp(false)} role="dialog" aria-label="Keyboard shortcuts"><div className="help-in" onClick={e => e.stopPropagation()}><h3>Keyboard shortcuts</h3>
-      <ul><li><kbd>1</kbd>–<kbd>8</kbd> Switch tabs</li><li><kbd>M</kbd> Mute or unmute sounds</li><li><kbd>?</kbd> Show or hide this help</li><li><kbd>Esc</kbd> Close</li></ul><button className="btn" onClick={() => setHelp(false)}>Got it</button></div></div>}
+      <ul><li><kbd>1</kbd>–<kbd>9</kbd> Switch tabs</li><li><kbd>Ctrl</kbd>+<kbd>K</kbd> Command palette</li><li><kbd>↑↑↓↓←→←→BA</kbd> A surprise 🌈</li><li><kbd>M</kbd> Mute or unmute sounds</li><li><kbd>?</kbd> Show or hide this help</li><li><kbd>Esc</kbd> Close</li></ul><button className="btn" onClick={() => setHelp(false)}>Got it</button></div></div>}
     <div className="toasts" aria-live="polite">{toasts.map(t => <div key={t.id} className={'toast' + (t.big ? ' big' : '')}><span className="te">{t.e}</span><div><b>{t.title}</b>{t.sub && <small>{t.sub}</small>}</div></div>)}</div>
     <div className="wrap">
       <header>
         <img className="crest" src="/logo.png" alt="Wise Owl School crest" />
-        <div><small>Wise Owl School · Westgate{p.nick ? ` · Hi, ${p.nick}!` : ''}</small><h1>IGCSE Study Buddy</h1></div>
+        <div><small className={cfg.crown ? 'crown' : ''}>Wise Owl School · Westgate{p.nick ? ` · Hi, ${p.nick}!` : ''}</small><h1>IGCSE Study Buddy</h1></div>
         <div className="stats">
           <button className="xp glow" onClick={() => changeTab('me')} aria-label="Your level and progress"><span className="lvl">{cur.e}</span><span><b>{cur.n}</b><span className="xpbar"><i style={{ width: pct + '%' }} /></span></span><span className="xpn"><CountUp to={p.xp} /> XP</span></button>
           <span className="pill"><span className={'flame' + (streak ? ' on' : '')}>🔥</span> {streak}-day streak</span>
@@ -136,12 +160,16 @@ export default function Home() {
         {ACCENTS.map(([n, c]) => <button key={n} className={'dot' + (accent === n ? ' on' : '')} style={{ background: c }} aria-label={n + ' theme'} onClick={() => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') }} />)}
         {spinReady && <button className="gift" onClick={() => changeTab('me')} aria-label="Daily spin is ready">🎁</button>}
         {inst && <button onClick={() => { inst.prompt(); setInst(null) }} aria-label="Install as an app">📲</button>}
+        <button onClick={() => setPal(true)} aria-label="Open command palette" title="Ctrl+K">🔎</button>
+        <button onClick={fullscreen} aria-label="Toggle fullscreen">🖥️</button>
         <button onClick={() => setHelp(true)} aria-label="Keyboard shortcuts">⌨️</button>
         {days !== null && days >= 0 && <span className="pill exam">📅 {days === 0 ? 'Exam day!' : `${days} days to your exam`}</span>}
       </div>
 
+      <Sky /><Ticker />
       <div className="daily"><span className="spark">💡</span><div><b>Today’s study tip</b><br /><span className="note">{tip}</span></div></div>
 
+      <Daily subj={subj} />
       <div className="rail" role="group" aria-label="Subject">
         {Object.keys(SUBJ).map(n => <button key={n} className="chip" aria-pressed={n === subj} onClick={() => { setSubj(n); store.set('subj', n); sfx('pop') }}>{n}</button>)}
       </div>
@@ -161,6 +189,9 @@ export default function Home() {
         {tab === 'plan' && <div><div className="seg" style={{ marginBottom: 14 }}><button aria-pressed={planTab === 'tasks'} onClick={() => setPlanTab('tasks')}>✅ Tasks</button><button aria-pressed={planTab === 'time'} onClick={() => setPlanTab('time')}>🗓 7-day timetable</button></div>
           {planTab === 'tasks' ? <Planner onDone={() => { award({ k: 'task' }); sfx('good') }} /> : <Timetable current={subj} />}</div>}
         {tab === 'tools' && <Tools api={api} />}
+        {tab === 'play' && <Play api={api} setTopic={setTopic} />}
+        {tab === 'lab' && <Lab api={api} />}
+        {tab === 'track' && <Track api={api} />}
         {tab === 'me' && <Me api={api} pct={pct} />}
       </div>
 
