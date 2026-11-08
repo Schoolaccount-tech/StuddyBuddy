@@ -14,7 +14,7 @@ function Typed({ text, fresh, onTick }: { text: string; fresh: boolean; onTick: 
     const id = setInterval(() => setN(v => { if (v >= text.length) { clearInterval(id); return v } return Math.min(text.length, v + 3) }), 16)
     return () => clearInterval(id)
   }, [text, fresh])
-  useEffect(onTick, [n]) // eslint-disable-line
+  useEffect(() => { void onTick() }, [n]) // eslint-disable-line
   return <>{text.slice(0, n)}{n < text.length && <span className="caret" />}</>
 }
 
@@ -25,7 +25,7 @@ export default function Ask({ api, onMood }: { api: Api; onMood: (m: 'idle' | 't
   const [q, setQ] = useState(''); const [busy, setBusy] = useState(false); const [style, setStyle] = useState<string>('exam'); const [mic, setMic] = useState(false)
   const end = useRef<HTMLDivElement>(null); const stop = useRef<(() => void) | null>(null)
   const scroll = () => end.current?.scrollIntoView({ block: 'nearest' })
-  useEffect(scroll, [log, busy])
+  useEffect(() => { void scroll() }, [log, busy]) // eslint-disable-line
   useEffect(() => () => stopSpeak(), [])
   const starters = ['Explain the main ideas simply', 'What do examiners usually ask about this?', 'Give me a worked example', 'Common mistakes to avoid']
   async function send(e?: React.FormEvent) {
