@@ -77,3 +77,58 @@ export function shareCard(title: string, big: string, line: string, who: string)
   g.font = '500 34px system-ui,sans-serif'; g.fillText('Ideas by Michael Makadzange · Code by Jayden Ngwenya', 540, 1260)
   c.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'study-buddy-score.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000) })
 }
+
+// Fireworks, emoji rain and star bursts on one lightweight canvas.
+export function celebrate(kind: 'fireworks' | 'emoji' | 'stars', emoji = '⭐') {
+  if (typeof document === 'undefined' || reduced()) return
+  const c = document.createElement('canvas')
+  c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999'
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, H = window.innerHeight
+  c.width = W * dpr; c.height = H * dpr; document.body.appendChild(c)
+  const g = c.getContext('2d'); if (!g) { c.remove(); return }
+  g.scale(dpr, dpr)
+  type P = { x: number; y: number; vx: number; vy: number; g: number; life: number; max: number; c: string; e?: string; s: number }
+  const ps: P[] = []; const cols = ['#f2c500', '#ff5d8f', '#4cc9f0', '#7bd88f', '#a78bfa', '#ffffff']
+  const burst = (x: number, y: number, n: number, col: string, em?: string) => { for (let i = 0; i < n; i++) { const a = (Math.PI * 2 * i) / n + Math.random() * 0.2, sp = Math.random() * 6 + 3; ps.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.12, life: 0, max: 70 + Math.random() * 30, c: col, e: em, s: em ? 22 : 2.6 }) } }
+  const plan: [number, () => void][] = []
+  if (kind === 'fireworks') for (let i = 0; i < 6; i++) plan.push([i * 16, () => burst(W * (0.15 + Math.random() * 0.7), H * (0.15 + Math.random() * 0.4), 46, cols[i % cols.length])])
+  if (kind === 'stars') plan.push([0, () => burst(W / 2, H * 0.45, 28, '#fff', emoji)], [14, () => burst(W / 2, H * 0.45, 22, '#fff', emoji)])
+  if (kind === 'emoji') for (let i = 0; i < 46; i++) plan.push([Math.floor(Math.random() * 50), () => ps.push({ x: Math.random() * W, y: -30, vx: (Math.random() - 0.5) * 1.2, vy: Math.random() * 3 + 2.5, g: 0.02, life: 0, max: 200, c: '#fff', e: emoji, s: 24 + Math.random() * 18 })])
+  let t = 0
+  const step = () => {
+    t++; plan.filter(x => x[0] === t).forEach(x => x[1]()); g.clearRect(0, 0, W, H)
+    for (const p of ps) {
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life++
+      g.globalAlpha = Math.max(0, 1 - p.life / p.max)
+      if (p.e) { g.font = `${p.s}px serif`; g.fillText(p.e, p.x, p.y) } else { g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, p.s, 0, 7); g.fill() }
+    }
+    g.globalAlpha = 1
+    if (t < 260) requestAnimationFrame(step); else c.remove()
+  }
+  requestAnimationFrame(step)
+}
+
+export function speak(t: string) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.slice(0, 1200)); u.lang = 'en-GB'; speechSynthesis.speak(u) } catch {} }
+export function stopSpeak() { try { speechSynthesis.cancel() } catch {} }
+export const canListen = () => typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+export function listen(onText: (t: string) => void, onEnd: () => void): (() => void) | null {
+  const R = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition; if (!R) return null
+  const r = new R(); r.lang = 'en-GB'; r.interimResults = true
+  r.onresult = (e: any) => onText(Array.from(e.results).map((x: any) => x[0].transcript).join(' ')); r.onend = onEnd; r.onerror = onEnd
+  try { r.start() } catch { return null }
+  return () => { try { r.stop() } catch {} }
+}
+
+export function passport(d: { name: string; level: string; xp: number; streak: number; badges: number; total: number; top: string }) {
+  const c = document.createElement('canvas'); c.width = 1080; c.height = 1350
+  const g = c.getContext('2d'); if (!g) return
+  const bg = g.createLinearGradient(0, 0, 1080, 1350); bg.addColorStop(0, '#0d1030'); bg.addColorStop(1, '#41318f')
+  g.fillStyle = bg; g.fillRect(0, 0, 1080, 1350); g.textAlign = 'center'
+  g.fillStyle = '#f2c500'; g.font = '700 38px system-ui,sans-serif'; g.fillText('WISE OWL WESTGATE · STUDY PASSPORT', 540, 130)
+  g.fillStyle = '#fff'; g.font = '800 96px system-ui,sans-serif'; g.fillText(d.name || 'Wise Owl Student', 540, 330)
+  g.fillStyle = '#f2c500'; g.font = '800 68px system-ui,sans-serif'; g.fillText(d.level, 540, 430)
+  const rows: [string, string][] = [['XP', String(d.xp)], ['Day streak', String(d.streak)], ['Badges', `${d.badges} / ${d.total}`], ['Best subject', d.top || '-']]
+  rows.forEach((r, i) => { const y = 560 + i * 150; g.fillStyle = '#ffffff18'; g.fillRect(140, y - 80, 800, 120); g.fillStyle = '#c9cbe4'; g.font = '500 40px system-ui,sans-serif'; g.textAlign = 'left'; g.fillText(r[0], 180, y); g.textAlign = 'right'; g.fillStyle = '#fff'; g.font = '800 54px system-ui,sans-serif'; g.fillText(r[1], 900, y + 4) })
+  g.textAlign = 'center'; g.fillStyle = '#c9cbe4'; g.font = '500 32px system-ui,sans-serif'; g.fillText('Ideas by Michael Makadzange · Code by Jayden Ngwenya', 540, 1260)
+  c.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'study-passport.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000) })
+}
