@@ -47,7 +47,7 @@ function Scribble() {
     const c = cv.current; if (!c) return; const g = c.getContext('2d'); if (!g) return
     const r = () => { const b = c.getBoundingClientRect(); c.width = b.width * 1; c.height = 320; g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height); g.lineCap = 'round'; g.lineJoin = 'round' }
     r()
-    const pos = (e: PointerEvent): [number, number] => { const b = c.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top] }
+    const pos = (e: PointerEvent): [number, number] => { const b = c.getBoundingClientRect(); const k = b.width ? c.width / b.width : 1; return [(e.clientX - b.left) * k, (e.clientY - b.top) * k] }
     const dn = (e: PointerEvent) => { down.current = true; last.current = pos(e); c.setPointerCapture?.(e.pointerId) }
     const mv = (e: PointerEvent) => { if (!down.current) return; const p = pos(e); g.strokeStyle = colR.current; g.lineWidth = wR.current * (colR.current === '#ffffff' ? 3 : 1); g.beginPath(); g.moveTo(last.current[0], last.current[1]); g.lineTo(p[0], p[1]); g.stroke(); last.current = p }
     const up = () => { down.current = false }

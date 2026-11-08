@@ -407,3 +407,65 @@ html[data-rainbow="1"] body{animation:rainbowhue 6s linear infinite}
 .shop,.bests{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}.shop-i{display:grid;gap:6px;justify-items:center;text-align:center;padding:16px 12px;border-radius:18px;border:1px solid var(--line);background:var(--bg)}.shop-i.own{border-color:var(--good)}.se{font-size:40px;animation:float 3s ease-in-out infinite}.shop-i small{color:var(--muted)}
 .best{padding:16px;border-radius:16px;background:var(--bg);border:1px solid var(--line);text-align:center}.best small{display:block;color:var(--muted)}.best b{font:800 34px var(--display);color:var(--owl)}
 @media (prefers-reduced-motion:reduce){.trail{display:none}.ticker-in,.sky .cloud,.sky .orb{animation:none}}
+
+/* ===== Round 4: phones, tablets and smartboards ===== */
+:root{--z:1}
+.wrap{zoom:var(--z)}
+.mascot,.toasts,.pal,.help-in{zoom:var(--z)}
+html[data-board="1"]{--zb:1.25}
+@media (min-width:1500px){:root{--z:1.2}}
+@media (min-width:1900px){:root{--z:1.5}}
+@media (min-width:2500px){:root{--z:2}}
+@media (min-width:3400px){:root{--z:2.6}}
+html[data-board="1"] .wrap,html[data-board="1"] .mascot,html[data-board="1"] .toasts,html[data-board="1"] .pal,html[data-board="1"] .help-in{zoom:calc(var(--z) * var(--zb,1))}
+@media (max-width:900px){html[data-board="1"] .wrap{zoom:1}}
+body{-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-y:none}
+button,.opt,.chip,.tab,.hole,.mc{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button,.tab,.chip{user-select:none;-webkit-user-select:none}
+.ctl button.on{outline:3px solid var(--owl);outline-offset:1px}
+.intro,.lvup{height:100vh;height:100dvh}
+footer{padding-bottom:max(18px,env(safe-area-inset-bottom,0px))}
+
+/* Touch screens and smartboards: big, forgiving tap targets */
+@media (pointer:coarse){
+  .btn,.chip,.tab,.opt,.starters button,.syl-i,.moods button{min-height:46px}
+  .seg button{min-height:42px;padding:9px 14px;font-size:14px}
+  .ctl button{min-width:44px;min-height:44px}
+  .ctl .dot{min-width:34px;min-height:34px}
+  .sw{width:40px;height:40px}.keys button{width:44px;height:50px}
+  .hd button{width:40px;height:40px}
+  input,select,textarea{min-height:44px}
+  input[type=range]{min-height:30px;width:140px}
+  .el{min-height:54px}
+  .pal-i{min-height:48px}
+}
+/* Phones */
+@media (max-width:700px){
+  :root{--z:1}
+  body{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+  input,select,textarea{font-size:16px}
+  header{gap:10px;padding-block:12px 4px}.crest{width:46px;height:46px}.stats{margin-left:0;width:100%;overflow-x:auto;padding-bottom:2px}
+  .ctl{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.ctl>*{flex:none}
+  .sky{height:54px}.sky .orb{font-size:26px}.sky-t{font-size:15px;bottom:8px}
+  .ticker{display:none}
+  .tabs{position:sticky;top:0;z-index:30;background:var(--bg);scrollbar-width:none}
+  .tab{padding:12px 14px}
+  .panel{padding:14px 12px;border-radius:0 0 16px 16px;min-height:320px}
+  .tip{font-size:13px}
+  .mascot img{width:46px;height:46px}.mascot .bubble,.mascot .say{max-width:200px;font-size:13px}
+  .pt{grid-template-columns:repeat(6,1fr)}.el-d{flex-direction:column;text-align:center}
+  .hunt{gap:6px}.hole{height:70px;font-size:38px}
+  .slots .reel{width:74px;height:84px;font-size:40px}
+  .keys{gap:4px}.keys button{width:32px}
+  .conv input,.conv select{width:100%}
+  .grade-o{justify-content:center}
+  .toasts{width:calc(100vw - 24px)}
+  .pal-bg{padding-top:8vh}
+  .lungs{width:160px;height:160px}
+  .scribble{height:260px}
+  .wall{grid-template-columns:1fr 1fr}.flipd span{width:28px;height:42px;font-size:24px}
+  .shop,.bests{grid-template-columns:1fr 1fr}
+}
+@media (max-width:380px){.mem{grid-template-columns:repeat(2,1fr)}.wall{grid-template-columns:1fr}.pt{grid-template-columns:repeat(5,1fr)}}
+/* Phone held sideways or short screens */
+@media (max-height:520px) and (orientation:landscape){.sky,.ticker{display:none}.panel{min-height:240px}.mascot{display:none}}

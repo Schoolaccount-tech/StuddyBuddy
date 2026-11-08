@@ -50,7 +50,7 @@ export default function Home() {
   const [sound, setSnd] = useState(true); const [accent, setAccent] = useState('owl'); const [mode, setMode] = useState<'auto' | 'light' | 'dark'>('auto')
   const [lvUp, setLvUp] = useState<{ e: string; n: string } | null>(null); const [help, setHelp] = useState(false); const [inst, setInst] = useState<any>(null); const [planTab, setPlanTab] = useState<'tasks' | 'time'>('tasks')
   const [tip, setTip] = useState(TIPS[0]); const [days, setDays] = useState<number | null>(null)
-  const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false)
+  const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false); const [board, setBoard] = useState(false)
   const tabsRef = useRef<HTMLDivElement>(null); const [ind, setInd] = useState({ l: 0, w: 0 })
   const dir = TABS.findIndex(t => t[0] === tab) >= prevTab.current ? 'r' : 'l'
 
@@ -58,6 +58,7 @@ export default function Home() {
     const s = store.get('subj', ''); if (s && SUBJ[s]) setSubj(s)
     setTip(TIPS[Math.floor(Date.now() / 864e5) % TIPS.length]); const ex = store.get('exam', ''); setDays(ex ? Math.ceil((new Date(ex + 'T00:00:00').getTime() - Date.now()) / 864e5) : null)
     const c = store.get<Partial<Cfg>>('cfg', {}); if (c && typeof c === 'object') { const n = { trail: (c.trail as Trail) || 'sparkle', party: !!c.party, crown: !!c.crown }; cfgRef.current = n; setCfgS(n) }
+    const bd = store.get('board', false); setBoard(!!bd); if (bd) document.documentElement.dataset.board = '1'
     const l = load(); pRef.current = l; setP(l); setSnd(soundOn())
     const a = store.get('accent', 'owl'); setAccent(a); document.documentElement.dataset.accent = a
     const m = store.get<'auto' | 'light' | 'dark'>('mode', 'auto'); setMode(m); if (m !== 'auto') document.documentElement.dataset.theme = m
@@ -110,6 +111,7 @@ export default function Home() {
     if (right / total >= 0.6) { if (right === total) celebrate('fireworks'); else confetti(1.1); sfx('win'); say(right === total ? 'Perfect score! 🏆' : 'Brilliant work!') } else say('Good effort. Check your mistakes and go again.', 'think', 5000)
   }
   function setCfg(c: Partial<Cfg>) { const n = { ...cfgRef.current, ...c }; cfgRef.current = n; setCfgS(n); store.set('cfg', n) }
+  function toggleBoard() { const n = !board; setBoard(n); store.set('board', n); if (n) document.documentElement.dataset.board = '1'; else delete document.documentElement.dataset.board; sfx('pop'); say(n ? 'Big screen mode on 📺' : 'Big screen mode off', 'cheer', 2500) }
   function fullscreen() { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen() } catch {} }
   function rainbow() { const h = document.documentElement; h.dataset.rainbow = h.dataset.rainbow ? '' : '1'; celebrate('fireworks'); sfx('level'); say(h.dataset.rainbow ? 'Rainbow mode unlocked! 🌈' : 'Rainbow mode off', 'cheer', 4000); award({ k: 'bonus', xp: 5 }) }
   function toggleSound() { setSnd(s => { setSound(!s); if (!s) sfx('pop'); return !s }) }
@@ -129,6 +131,7 @@ export default function Home() {
     ...ACCENTS.map(([n]) => ({ id: 'a' + n, e: '🎨', label: `Theme: ${n}`, hint: 'colour', run: () => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') } })),
     { id: 'snd', e: sound ? '🔇' : '🔊', label: sound ? 'Mute sounds' : 'Turn sounds on', run: toggleSound },
     { id: 'mode', e: '🌗', label: 'Switch light / dark mode', hint: 'dark light', run: cycleMode },
+    { id: 'bd', e: '📺', label: board ? 'Big screen mode: turn off' : 'Big screen mode (smartboard)', hint: 'smartboard projector large', run: toggleBoard },
     { id: 'fs', e: '🖥️', label: 'Toggle fullscreen', run: fullscreen },
     { id: 'rb', e: '🌈', label: 'Rainbow mode', hint: 'party', run: rainbow },
     { id: 'br', e: '🌬️', label: 'Breathe (calm down)', hint: 'lab relax', run: () => changeTab('lab') },
@@ -161,6 +164,7 @@ export default function Home() {
         {spinReady && <button className="gift" onClick={() => changeTab('me')} aria-label="Daily spin is ready">🎁</button>}
         {inst && <button onClick={() => { inst.prompt(); setInst(null) }} aria-label="Install as an app">📲</button>}
         <button onClick={() => setPal(true)} aria-label="Open command palette" title="Ctrl+K">🔎</button>
+        <button className={board ? 'on' : ''} onClick={toggleBoard} aria-label="Big screen mode for smartboards" aria-pressed={board} title="Big screen mode">📺</button>
         <button onClick={fullscreen} aria-label="Toggle fullscreen">🖥️</button>
         <button onClick={() => setHelp(true)} aria-label="Keyboard shortcuts">⌨️</button>
         {days !== null && days >= 0 && <span className="pill exam">📅 {days === 0 ? 'Exam day!' : `${days} days to your exam`}</span>}
