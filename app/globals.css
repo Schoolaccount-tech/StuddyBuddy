@@ -603,3 +603,5 @@ html[data-calm="1"] .trail,html[data-calm="1"] .stars,html[data-calm="1"] .ticke
 .tscore{font:800 56px/1 var(--display);color:var(--owl);margin:6px 0 10px}
 .share{width:min(420px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:24px;text-align:center;display:grid;gap:12px;justify-items:center;margin-top:-6vh;animation:palin .3s cubic-bezier(.2,1.3,.4,1) both;box-shadow:0 30px 80px #0007}
 .qr{width:276px;height:276px;border-radius:18px;background:#fff;display:grid;place-items:center;padding:8px;box-shadow:0 0 0 4px var(--owl)}.share-url{padding:6px 12px;border-radius:10px;background:var(--bg);font-size:13px;word-break:break-all}
+
+.solo-p{display:flex;justify-content:center;margin:26px auto 0;max-width:420px;padding:0 16px}.solo-p .pcard{width:100%;animation-delay:.35s}.pcard.c .av-in{background:linear-gradient(135deg,#ffb347,#ff5e7e)}

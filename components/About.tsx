@@ -14,7 +14,7 @@ const STORY: [string, string, string][] = [
   ['🚀', 'The launch', 'Now every learner can study smarter, one small win at a time.'],
 ]
 
-function Person({ initials, name, role, emoji, blurb, tags, verified, tone }: { initials: string; name: string; role: string; emoji: string; blurb: string; tags: string[]; verified?: boolean; tone: 'a' | 'b' }) {
+function Person({ initials, name, role, emoji, blurb, tags, verified, tone }: { initials: string; name: string; role: string; emoji: string; blurb: string; tags: string[]; verified?: boolean; tone: 'a' | 'b' | 'c' }) {
   const ref = useRef<HTMLDivElement>(null)
   const move = (e: React.PointerEvent) => {
     const el = ref.current; if (!el || e.pointerType === 'touch') return
@@ -62,13 +62,17 @@ export default function About() {
         <img className="crest big" src="/logo.png" alt="Wise Owl School crest" />
         <small>Wise Owl School · Westgate</small>
         <h1 aria-label={TITLE}>{TITLE.split('').map((c, i) => <span key={i} className="ltr" style={{ animationDelay: `${i * 70}ms` }}>{c === ' ' ? ' ' : c}</span>)}</h1>
-        <p className="lead">Two people, one big idea, and a study buddy for every learner.</p>
+        <p className="lead">Big ideas, clever code, and a team cheering them on, all for every learner.</p>
       </header>
 
       <section className="duo-p">
         <Person tone="a" initials="MM" name="Michael Makadzange" role="Ideas" emoji="💡" blurb="The dreamer behind the Study Buddy. Michael came up with the ideas that make revision feel fun instead of heavy." tags={['Big ideas', 'Features', 'Vision']} />
         <div className="plus" aria-hidden><span>＋</span><i /></div>
         <Person tone="b" initials="JN" name="Jayden Ngwenya" role="Code" emoji="💻" verified blurb="The builder. Jayden turned the ideas into a real website, with games, animations and tools that work on every screen." tags={['Website', 'Animations', 'Smartboard ready']} />
+      </section>
+
+      <section className="solo-p">
+        <Person tone="c" initials="EM" name="Emmanuel Makudo" role="Motivation & morale" emoji="🔥" blurb="The team's cheerleader. Emmanuel kept spirits high and kept the energy going whenever the work got tough." tags={['Motivation', 'Morale', 'Team spirit']} />
       </section>
 
       <section className="stats-row">{STATS.map(([n, l], i) => <div key={l} className="stat" style={{ animationDelay: `${i * 90}ms` }}><b>{n}</b><span>{l}</span></div>)}</section>
@@ -81,7 +85,7 @@ export default function About() {
 
       <section className="thanks">
         <h2>Made with ❤️ for Wise Owl School Westgate</h2>
-        <p className="note">Ideas by <b>Michael Makadzange</b> · Code by <b>Jayden Ngwenya</b></p>
+        <p className="note">Ideas by <b>Michael Makadzange</b> · Code by <b>Jayden Ngwenya</b> · Motivation by <b>Emmanuel Makudo</b></p>
         <div className="row"><button className="btn" onClick={() => { celebrate('fireworks'); confetti(1.5); sfx('win') }}>🎉 Celebrate the team</button><a className="btn ghost" href="/">Start studying</a></div>
       </section>
     </main>
