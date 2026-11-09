@@ -75,16 +75,19 @@ export function Konami({ onHit }: { onHit: () => void }) {
 
 /** A little sky: sun by day, moon and stars at night, drifting clouds. Chosen after mount so it never mismatches. */
 export function Sky() {
-  const [h, setH] = useState<number | null>(null)
+  const [h, setH] = useState<number | null>(null); const [lang, setLang] = useState(0)
   useEffect(() => { setH(new Date().getHours()) }, [])
   if (h === null) return <div className="sky" aria-hidden />
   const night = h < 6 || h >= 19, dusk = (h >= 17 && h < 19) || (h >= 5 && h < 7)
-  const word = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Late night study'
-  return <div className={'sky ' + (night ? 'night' : dusk ? 'dusk' : 'day')} aria-hidden>
+  const slot = h < 12 ? 0 : h < 17 ? 1 : 2
+  const GREET = [['Good morning', 'Good afternoon', 'Good evening'], ['Mangwanani', 'Masikati', 'Manheru'], ['Livukile', 'Salibonani', 'Salibonani']]
+  const LNAME = ['English', 'Shona', 'Ndebele']
+  const word = h >= 21 || h < 5 ? (lang === 0 ? 'Late night study' : GREET[lang][2]) : GREET[lang][slot]
+  return <div className={'sky ' + (night ? 'night' : dusk ? 'dusk' : 'day')} onClick={() => setLang(l => (l + 1) % 3)} title="Tap to change language">
     <span className="orb">{night ? '🌙' : '☀️'}</span>
     <span className="cloud c1">☁️</span><span className="cloud c2">☁️</span>
     {night && <><i className="tw t1" /><i className="tw t2" /><i className="tw t3" /><i className="tw t4" /></>}
-    <b className="sky-t">{word}, owl! 🦉</b>
+    <b className="sky-t">{word}, owl! 🦉</b><small className="sky-l">{LNAME[lang]} · tap me</small>
   </div>
 }
 

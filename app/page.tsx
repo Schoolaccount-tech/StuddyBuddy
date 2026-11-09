@@ -20,6 +20,9 @@ import CountUp from '@/components/CountUp'
 import Play from '@/components/Play'
 import Lab from '@/components/Lab'
 import Track from '@/components/Track'
+import Boost from '@/components/Boost'
+import Share from '@/components/Share'
+import { readLook, applyLook } from '@/lib/a11y'
 import Palette, { type Cmd } from '@/components/Palette'
 import { CursorTrail, Ripple, Konami, Sky, Ticker, Daily, type Trail } from '@/components/Extras'
 import type { Api, Cfg } from '@/components/api'
@@ -38,7 +41,7 @@ const SUBJ: Record<string, string> = {
   'Accounting': 'Lay out ledgers and statements neatly and label every line. Check that the totals balance.',
 }
 type Toast = { id: number; e: string; title: string; sub: string; big: boolean }
-const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['me', 'Progress']] as const
+const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['boost', 'Boost'], ['me', 'Progress']] as const
 type Tab = typeof TABS[number][0]
 const ACCENTS = [['owl', '#f2c500'], ['ocean', '#38bdf8'], ['sunset', '#fb7185'], ['forest', '#4ade80'], ['violet', '#a78bfa'], ['mint', '#2dd4bf'], ['lava', '#fb923c'], ['lime', '#a3e635']] as const
 
@@ -50,15 +53,16 @@ export default function Home() {
   const [sound, setSnd] = useState(true); const [accent, setAccent] = useState('owl'); const [mode, setMode] = useState<'auto' | 'light' | 'dark'>('auto')
   const [lvUp, setLvUp] = useState<{ e: string; n: string } | null>(null); const [help, setHelp] = useState(false); const [inst, setInst] = useState<any>(null); const [planTab, setPlanTab] = useState<'tasks' | 'time'>('tasks')
   const [tip, setTip] = useState(TIPS[0]); const [days, setDays] = useState<number | null>(null)
-  const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false); const [board, setBoard] = useState(false); const [rb, setRb] = useState(false); const [spin, setSpin] = useState(false); const crestN = useRef(0)
+  const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false, remind: true }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false); const [share, setShare] = useState(false); const [board, setBoard] = useState(false); const [rb, setRb] = useState(false); const [spin, setSpin] = useState(false); const crestN = useRef(0)
   const tabsRef = useRef<HTMLDivElement>(null); const [ind, setInd] = useState({ l: 0, w: 0 })
   const dir = TABS.findIndex(t => t[0] === tab) >= prevTab.current ? 'r' : 'l'
 
   useEffect(() => {
     const s = store.get('subj', ''); if (s && SUBJ[s]) setSubj(s)
     setTip(TIPS[Math.floor(Date.now() / 864e5) % TIPS.length]); const ex = store.get('exam', ''); setDays(ex ? Math.ceil((new Date(ex + 'T00:00:00').getTime() - Date.now()) / 864e5) : null)
-    const c = store.get<Partial<Cfg>>('cfg', {}); if (c && typeof c === 'object') { const n = { trail: (c.trail as Trail) || 'sparkle', party: !!c.party, crown: !!c.crown }; cfgRef.current = n; setCfgS(n) }
+    const c = store.get<Partial<Cfg>>('cfg', {}); if (c && typeof c === 'object') { const n = { trail: (c.trail as Trail) || 'sparkle', party: !!c.party, crown: !!c.crown, remind: c.remind !== false }; cfgRef.current = n; setCfgS(n) }
     const rbo = store.get('rainbow', false); setRb(!!rbo); if (rbo) document.documentElement.dataset.rainbow = '1'
+    applyLook(readLook())
     const bd = store.get('board', false); setBoard(!!bd); if (bd) document.documentElement.dataset.board = '1'
     const l = load(); pRef.current = l; setP(l); setSnd(soundOn())
     const a = store.get('accent', 'owl'); setAccent(a); document.documentElement.dataset.accent = a
@@ -122,6 +126,13 @@ export default function Home() {
   function changeTab(t: Tab) { prevTab.current = TABS.findIndex(x => x[0] === tab); setTab(t); sfx('pop'); if (t !== 'focus') noise(false); if (cfgRef.current.party) confetti(0.5) }
   function cycleMode() { const n = mode === 'auto' ? 'dark' : mode === 'dark' ? 'light' : 'auto'; setMode(n); store.set('mode', n); if (n === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = n }
 
+  useEffect(() => {
+    if (!cfg.remind) return
+    const tips = ['Time for a sip of water 💧', 'Stand up and stretch for 30 seconds 🧘', 'Look at something far away for 20 seconds 👀', 'Roll your shoulders and breathe slowly 🌬️']
+    let k = 0
+    const id = setInterval(() => { if (document.visibilityState === 'visible') { toast('⏰', 'Quick break?', tips[k++ % tips.length], true); sfx('pop') } }, 30 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [cfg.remind]) // eslint-disable-line
   const api: Api = { p, patch, award, say, toast, subj, topic, cfg, setCfg }
   const lv = levelOf(p.xp), cur = LEVELS[lv], nxt = LEVELS[lv + 1]
   const pct = nxt ? Math.round(((p.xp - cur.xp) / (nxt.xp - cur.xp)) * 100) : 100
@@ -130,7 +141,7 @@ export default function Home() {
     const spinReady = p.spin !== dayKey()
 
   const cmds: Cmd[] = [
-    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
+    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
     ...Object.keys(SUBJ).map(n => ({ id: 's' + n, e: '📚', label: `Subject: ${n}`, hint: 'subject', run: () => { setSubj(n); store.set('subj', n); sfx('pop') } })),
     ...ACCENTS.map(([n]) => ({ id: 'a' + n, e: '🎨', label: `Theme: ${n}`, hint: 'colour', run: () => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') } })),
     { id: 'snd', e: sound ? '🔇' : '🔊', label: sound ? 'Mute sounds' : 'Turn sounds on', run: toggleSound },
@@ -139,6 +150,9 @@ export default function Home() {
     { id: 'fs', e: '🖥️', label: 'Toggle fullscreen', run: fullscreen },
     { id: 'rb', e: '🌈', label: 'Rainbow mode', hint: 'party', run: rainbow },
     { id: 'br', e: '🌬️', label: 'Breathe (calm down)', hint: 'lab relax', run: () => changeTab('lab') },
+    { id: 'share', e: '📱', label: 'Share / QR code', hint: 'qr join phone link', run: () => setShare(true) },
+    { id: 'remind', e: '💧', label: cfg.remind ? 'Break reminders: turn off' : 'Break reminders: turn on', hint: 'water stretch', run: () => { setCfg({ remind: !cfg.remind }); say(cfg.remind ? 'Reminders off' : 'I will remind you to take breaks 💧', 'cheer', 3000) } },
+    { id: 'about', e: '✨', label: 'Meet the team (Jayden & Michael)', hint: 'about credits', run: () => { location.href = '/about' } },
     { id: 'help', e: '⌨️', label: 'Keyboard shortcuts', run: () => setHelp(true) },
   ]
 
@@ -146,6 +160,7 @@ export default function Home() {
     <Intro />
     <div className="aurora" aria-hidden><i /><i /><i /></div><Starfield /><CursorTrail kind={rb ? 'rainbow' : cfg.trail} /><div className="rb-bar" aria-hidden /><Ripple /><Konami onHit={rainbow} />
     {pal && <Palette cmds={cmds} onClose={() => setPal(false)} />}
+    {share && <Share onClose={() => setShare(false)} />}
     {lvUp && <LevelUp e={lvUp.e} n={lvUp.n} onClose={() => setLvUp(null)} />}
     {help && <div className="help" onClick={() => setHelp(false)} role="dialog" aria-label="Keyboard shortcuts"><div className="help-in" onClick={e => e.stopPropagation()}><h3>Keyboard shortcuts</h3>
       <ul><li><kbd>1</kbd>–<kbd>9</kbd> Switch tabs</li><li><kbd>Ctrl</kbd>+<kbd>K</kbd> Command palette</li><li><kbd>↑↑↓↓←→←→BA</kbd> A surprise 🌈</li><li><kbd>M</kbd> Mute or unmute sounds</li><li><kbd>?</kbd> Show or hide this help</li><li><kbd>Esc</kbd> Close</li></ul><button className="btn" onClick={() => setHelp(false)}>Got it</button></div></div>}
@@ -167,6 +182,7 @@ export default function Home() {
         {ACCENTS.map(([n, c]) => <button key={n} className={'dot' + (accent === n ? ' on' : '')} style={{ background: c }} aria-label={n + ' theme'} onClick={() => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') }} />)}
         {spinReady && <button className="gift" onClick={() => changeTab('me')} aria-label="Daily spin is ready">🎁</button>}
         {inst && <button onClick={() => { inst.prompt(); setInst(null) }} aria-label="Install as an app">📲</button>}
+        <button onClick={() => setShare(true)} aria-label="Share with a QR code" title="Share / QR">📱</button>
         <button onClick={() => setPal(true)} aria-label="Open command palette" title="Ctrl+K">🔎</button>
         <button className={'rbbtn' + (rb ? ' on' : '')} onClick={rainbow} aria-label="Rainbow mode" aria-pressed={rb} title="Rainbow mode">🌈</button>
         <button className={board ? 'on' : ''} onClick={toggleBoard} aria-label="Big screen mode for smartboards" aria-pressed={board} title="Big screen mode">📺</button>
@@ -201,12 +217,14 @@ export default function Home() {
         {tab === 'play' && <Play api={api} setTopic={setTopic} />}
         {tab === 'lab' && <Lab api={api} />}
         {tab === 'track' && <Track api={api} />}
+        {tab === 'boost' && <Boost api={api} />}
         {tab === 'me' && <Me api={api} pct={pct} />}
       </div>
 
       <footer>
         <div className="credit"><span>💡 Ideas by <b>Michael Makadzange</b></span><span>💻 Code by <b>Jayden Ngwenya</b>
           <svg className="tick" viewBox="0 0 24 24" aria-label="Verified"><path fill="#1d9bf0" d="M12 1.5l2.6 1.7 3.1-.2 1.3 2.8 2.7 1.5-.5 3.1 1.1 2.9-2 2.4-.2 3.1-3 .9-2 2.4-2.9-1.1-2.9 1.1-2-2.4-3-.9-.2-3.1-2-2.4 1.1-2.9-.5-3.1 2.7-1.5 1.3-2.8 3.1.2z" /><path d="M7.7 12.2l3 3 5.6-6" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></span></div>
+        <div><a className="aboutlink" href="/about">Meet the team ✨</a></div>
         Made for Wise Owl School Westgate · press <kbd>?</kbd> for shortcuts
       </footer>
     </div>
