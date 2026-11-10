@@ -108,7 +108,31 @@ export function celebrate(kind: 'fireworks' | 'emoji' | 'stars', emoji = '⭐') 
   requestAnimationFrame(step)
 }
 
-export function speak(t: string) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.slice(0, 1200)); u.lang = 'en-GB'; speechSynthesis.speak(u) } catch {} }
+/** Turn markdown and chat symbols into plain words so the voice never says "hashtag" or "asterisk". */
+export function cleanForSpeech(t: string): string {
+  return t
+    .replace(/```[\s\S]*?```/g, ' (code example) ')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, ' link ')
+    .replace(/^\s{0,3}#{1,6}\s*/gm, '')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/^\s*([-*+•]|\d+[.)])\s+/gm, '')
+    .replace(/^\s*\|?[\s:|-]{3,}\|?\s*$/gm, ' ')
+    .replace(/\|/g, ', ')
+    .replace(/(\*\*|__|\*|_|~~)/g, '')
+    .replace(/#/g, ' ')
+    .replace(/\$\$?([^$]+)\$\$?/g, '$1')
+    .replace(/\\(frac|times|div|sqrt|pi|theta|alpha|beta)\b/g, (_, w) => ({ frac: '', times: ' times ', div: ' divided by ', sqrt: ' square root of ', pi: ' pi ', theta: ' theta ', alpha: ' alpha ', beta: ' beta ' } as Record<string, string>)[w])
+    .replace(/[{}\\^]/g, ' ')
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, '')
+    .replace(/\s*\n+\s*/g, '. ')
+    .replace(/([.!?:;])\s*\./g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+export function speak(t: string) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(cleanForSpeech(t).slice(0, 1200)); u.lang = 'en-GB'; speechSynthesis.speak(u) } catch {} }
 export function stopSpeak() { try { speechSynthesis.cancel() } catch {} }
 export const canListen = () => typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
 export function listen(onText: (t: string) => void, onEnd: () => void): (() => void) | null {

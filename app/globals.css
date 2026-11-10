@@ -605,3 +605,23 @@ html[data-calm="1"] .trail,html[data-calm="1"] .stars,html[data-calm="1"] .ticke
 .qr{width:276px;height:276px;border-radius:18px;background:#fff;display:grid;place-items:center;padding:8px;box-shadow:0 0 0 4px var(--owl)}.share-url{padding:6px 12px;border-radius:10px;background:var(--bg);font-size:13px;word-break:break-all}
 
 .solo-p{display:flex;justify-content:center;margin:26px auto 0;max-width:420px;padding:0 16px}.solo-p .pcard{width:100%;animation-delay:.35s}.pcard.c .av-in{background:linear-gradient(135deg,#ffb347,#ff5e7e)}
+
+/* ---- League ---- */
+.lg{display:grid;gap:12px}.lgbanner{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--owl) 22%,transparent),transparent);border:1px solid color-mix(in srgb,var(--owl) 40%,transparent)}
+.lgbanner h2{margin:0;font-size:1.15rem}.lgseason{display:grid;text-align:right}
+.hchip{display:inline-block;padding:1px 8px;border-radius:99px;color:#111;font-size:.72rem;font-weight:700;vertical-align:middle}
+.hbars{display:grid;gap:12px}.hbar{display:grid;gap:4px;margin:6px 0}.hb-top{display:flex;justify-content:space-between}.hb-track{height:12px;border-radius:99px;background:color-mix(in srgb,currentColor 12%,transparent);overflow:hidden}.hb-track i{display:block;height:100%;border-radius:99px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.lgtable{display:grid;gap:6px}.lgrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:color-mix(in srgb,currentColor 6%,transparent);flex-wrap:wrap}
+.lgrow.r1{outline:2px solid #e0a526}.lgrank{min-width:30px;text-align:center}.lgname{flex:1;min-width:120px}.lgpts{font-variant-numeric:tabular-nums}.lgmedals{font-size:.8rem}
+.lgevent{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border-radius:14px;background:color-mix(in srgb,currentColor 6%,transparent);margin:6px 0;flex-wrap:wrap}
+.lgphase{display:grid;text-align:right;font-weight:700}.lgphase.open{color:#22a35a}
+.lgstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:10px 0}.stat{display:grid;text-align:center;padding:10px;border-radius:12px;background:color-mix(in srgb,currentColor 6%,transparent)}.stat b{font-size:1.2rem}.stat span{font-size:.75rem;opacity:.75}
+.lgme-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.lgme-head h2{margin:0}.lgme-rank{display:grid;text-align:center}.lgme-rank b{font-size:1.8rem}
+.lg3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.lgtrophies{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.lgtrophy{display:grid;gap:2px;text-align:center;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--owl) 14%,transparent)}.t-e{font-size:2rem}
+.gate{display:grid;gap:10px;max-width:520px}.gate input,.lgform input,.lgform select,.lgform textarea,.lgadmin input,.lgadmin select{padding:9px 10px;border-radius:10px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit;font:inherit;min-width:0}
+.lgform{display:grid;gap:10px}.lgform label{display:grid;gap:4px;font-size:.85rem}.lgform .row input.grow{flex:1}
+.stack{display:grid;gap:6px;justify-items:end}.num{width:64px}.mono{font-family:ui-monospace,monospace;letter-spacing:.1em}
+.linkish{background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer;padding:0;font:inherit}
+.wrapseg{flex-wrap:wrap}
+.md{white-space:normal}.md p{margin:.4em 0}.md ul,.md ol{margin:.4em 0;padding-left:1.3em}.mdh{font-weight:800;margin:.6em 0 .2em}.md pre{overflow:auto;padding:8px;border-radius:8px;background:color-mix(in srgb,currentColor 8%,transparent)}.md code{font-family:ui-monospace,monospace}.mdt{overflow:auto}.mdt td,.mdt th{border:1px solid color-mix(in srgb,currentColor 20%,transparent);padding:4px 8px}.md blockquote{margin:.4em 0;padding-left:10px;border-left:3px solid var(--owl)}

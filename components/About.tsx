@@ -72,7 +72,7 @@ export default function About() {
       </section>
 
       <section className="solo-p">
-        <Person tone="c" initials="EM" name="Emmanuel Makudo" role="Motivation & morale" emoji="🔥" blurb="The team's cheerleader. Emmanuel kept spirits high and kept the energy going whenever the work got tough." tags={['Motivation', 'Morale', 'Team spirit']} />
+        <Person tone="c" initials="EM" name="Emmanuel Makhubo" role="Motivation & morale" emoji="🔥" blurb="The team's cheerleader. Emmanuel kept spirits high and kept the energy going whenever the work got tough." tags={['Motivation', 'Morale', 'Team spirit']} />
       </section>
 
       <section className="stats-row">{STATS.map(([n, l], i) => <div key={l} className="stat" style={{ animationDelay: `${i * 90}ms` }}><b>{n}</b><span>{l}</span></div>)}</section>
@@ -85,7 +85,7 @@ export default function About() {
 
       <section className="thanks">
         <h2>Made with ❤️ for Wise Owl School Westgate</h2>
-        <p className="note">Ideas by <b>Michael Makadzange</b> · Code by <b>Jayden Ngwenya</b> · Motivation by <b>Emmanuel Makudo</b></p>
+        <p className="note">Ideas by <b>Michael Makadzange</b> · Code by <b>Jayden Ngwenya</b> · Motivation by <b>Emmanuel Makhubo</b></p>
         <div className="row"><button className="btn" onClick={() => { celebrate('fireworks'); confetti(1.5); sfx('win') }}>🎉 Celebrate the team</button><a className="btn ghost" href="/">Start studying</a></div>
       </section>
     </main>
