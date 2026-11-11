@@ -2,7 +2,8 @@
 import { useState } from 'react'
 import { sfx } from '@/lib/fx'
 
-const SUBJ = ['Mathematics', 'Biology', 'Chemistry', 'Physics', 'English Language', 'Computer Science', 'Business Studies', 'Geography', 'History', 'Economics', 'Accounting']
+import { POPULAR } from '@/lib/subjects'
+const SUBJ = POPULAR
 type Block = { s: string; m: number; done: boolean }
 type Day = { label: string; blocks: Block[] }
 

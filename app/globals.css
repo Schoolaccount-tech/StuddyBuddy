@@ -630,7 +630,7 @@ html[data-calm="1"] .trail,html[data-calm="1"] .stars,html[data-calm="1"] .ticke
 .pin{font-size:1.8rem;text-align:center;letter-spacing:.3em;padding:12px;border-radius:12px;border:2px solid var(--owl);background:transparent;color:inherit;width:100%;box-sizing:border-box}
 .game{display:grid;gap:12px}.gamehead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.center{text-align:center}
 .bigpin{display:grid;text-align:center;padding:18px;border-radius:18px;background:color-mix(in srgb,var(--owl) 18%,transparent)}.bigpin b{font-size:clamp(2.4rem,10vw,4.5rem);letter-spacing:.2em}
-.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.chip{padding:6px 12px;border-radius:99px;background:color-mix(in srgb,currentColor 10%,transparent);font-weight:600;animation:chipin .35s ease both}@keyframes chipin{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.pchips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.pchip{padding:6px 12px;border-radius:99px;background:color-mix(in srgb,currentColor 10%,transparent);font-weight:600;animation:chipin .35s ease both}@keyframes chipin{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
 .timerbar{height:10px;border-radius:99px;background:color-mix(in srgb,currentColor 12%,transparent);overflow:hidden}.timerbar i{display:block;height:100%;background:var(--owl);transition:width .12s linear}
 .gameq{text-align:center;margin:6px 0;font-size:clamp(1.15rem,4.5vw,1.9rem)}
 .answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
@@ -643,10 +643,12 @@ html[data-calm="1"] .trail,html[data-calm="1"] .stars,html[data-calm="1"] .ticke
 .podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin:10px 0}.pod{display:grid;text-align:center;gap:2px;min-width:90px}.pod .pb{border-radius:10px 10px 0 0;background:color-mix(in srgb,var(--owl) 35%,transparent);font-size:2rem;padding-top:8px}.p1 .pb{height:120px}.p2 .pb{height:84px}.p3 .pb{height:56px}.pn{font-weight:800}.ps{font-variant-numeric:tabular-nums}
 .rosterlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;max-height:300px;overflow:auto}.rosteritem{display:flex;flex-direction:column;align-items:flex-start;padding:10px;border-radius:10px;border:1px solid color-mix(in srgb,currentColor 20%,transparent);background:transparent;color:inherit;cursor:pointer;font:inherit;font-weight:700}.rosteritem small{font-weight:400;opacity:.7}
 .claimconfirm{display:grid;gap:6px;padding:12px;border-radius:12px;background:color-mix(in srgb,var(--owl) 14%,transparent)}
-@media (prefers-reduced-motion:reduce){.chip,.ans.right{animation:none}}
+@media (prefers-reduced-motion:reduce){.pchip,.ans.right{animation:none}}
 .askpic,.picprev img{max-width:220px;max-height:200px;border-radius:10px;display:block;margin-bottom:6px}.picprev{display:flex;align-items:center;gap:10px}
 .msg.ai .md{white-space:normal}.msg .md>:first-child{margin-top:0}.msg .md>:last-child{margin-bottom:0}.btn.on{outline:2px solid var(--owl)}
 .hub{display:grid;gap:12px}.hubnote{padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--owl) 14%,transparent);font-size:.88rem}.hubcard{display:grid;gap:10px;padding:14px;border-radius:16px;background:color-mix(in srgb,currentColor 6%,transparent)}
 .hublink{display:inline-block;padding:7px 12px;border-radius:99px;background:color-mix(in srgb,var(--owl) 25%,transparent);color:inherit;text-decoration:none;font-weight:600;font-size:.9rem}.hubdocs{display:flex;flex-wrap:wrap;gap:8px}.hubdocs small a{background:none;padding:0;text-decoration:underline;font-weight:400}
 .hubpapers{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.hubsub{margin:6px 0;padding:8px 12px;border-radius:12px;background:color-mix(in srgb,currentColor 6%,transparent)}.hubsub summary{cursor:pointer;font-weight:700}.cw{min-width:110px}
 .weak{display:grid;gap:12px}.weakcard{display:grid;gap:8px;padding:12px;border-radius:14px;background:color-mix(in srgb,currentColor 6%,transparent)}
+
+.subjpick{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.subjpick select{padding:8px 10px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:inherit;font:inherit;font-weight:700;max-width:100%}

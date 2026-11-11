@@ -106,7 +106,7 @@ function Game({ pin, host, code, staff, onExit }: { pin: string; host: boolean; 
 
   if (s.phase === 'lobby') return <div className="game">{Head}
     <div className="bigpin"><small>Game PIN</small><b>{pin}</b></div>
-    <div className="chips">{s.names.length ? s.names.map((n: string, i: number) => <span key={i} className="chip">{n}</span>) : <span className="note">Waiting for players to join…</span>}</div>
+    <div className="pchips">{s.names.length ? s.names.map((n: string, i: number) => <span key={i} className="pchip">{n}</span>) : <span className="note">Waiting for players to join…</span>}</div>
     {host ? <div className="row"><button className="btn" onClick={() => act('start')} disabled={busy || s.players < 1}>Start game ({s.players})</button><button className="btn ghost" onClick={() => { if (confirm('Cancel this game?')) act('end').then(onExit) }}>Cancel</button></div>
       : <p className="center">You’re in{me_name(s)}! Watch the host’s screen. 👀</p>}{err && <div className="notice">{err}</div>}</div>
 

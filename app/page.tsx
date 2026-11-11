@@ -24,6 +24,7 @@ import Boost from '@/components/Boost'
 import League from '@/components/League'
 import IgcseHub from '@/components/IgcseHub'
 import WeakSpots from '@/components/Weak'
+import { POPULAR, ALL_NAMES, GROUP_ORDER, groupOf, tipFor, isSubject } from '@/lib/subjects'
 import { reportPractice, getCode } from '@/lib/league'
 import Share from '@/components/Share'
 import { readLook, applyLook } from '@/lib/a11y'
@@ -62,7 +63,7 @@ export default function Home() {
   const dir = TABS.findIndex(t => t[0] === tab) >= prevTab.current ? 'r' : 'l'
 
   useEffect(() => {
-    const s = store.get('subj', ''); if (s && SUBJ[s]) setSubj(s)
+    const s = store.get('subj', ''); if (s && (SUBJ[s] || isSubject(s))) setSubj(s)
     setTip(TIPS[Math.floor(Date.now() / 864e5) % TIPS.length]); const ex = store.get('exam', ''); setDays(ex ? Math.ceil((new Date(ex + 'T00:00:00').getTime() - Date.now()) / 864e5) : null)
     const c = store.get<Partial<Cfg>>('cfg', {}); if (c && typeof c === 'object') { const n = { trail: (c.trail as Trail) || 'sparkle', party: !!c.party, crown: !!c.crown, remind: c.remind !== false }; cfgRef.current = n; setCfgS(n) }
     const rbo = store.get('rainbow', false); setRb(!!rbo); if (rbo) document.documentElement.dataset.rainbow = '1'
@@ -152,7 +153,7 @@ export default function Home() {
 
   const cmds: Cmd[] = [
     ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🎯', '🎓', '🛡️', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
-    ...Object.keys(SUBJ).map(n => ({ id: 's' + n, e: '📚', label: `Subject: ${n}`, hint: 'subject', run: () => { setSubj(n); store.set('subj', n); sfx('pop') } })),
+    ...ALL_NAMES.map(n => ({ id: 's' + n, e: '📚', label: `Subject: ${n}`, hint: 'subject', run: () => { setSubj(n); store.set('subj', n); sfx('pop') } })),
     ...ACCENTS.map(([n]) => ({ id: 'a' + n, e: '🎨', label: `Theme: ${n}`, hint: 'colour', run: () => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') } })),
     { id: 'snd', e: sound ? '🔇' : '🔊', label: sound ? 'Mute sounds' : 'Turn sounds on', run: toggleSound },
     { id: 'mode', e: '🌗', label: 'Switch light / dark mode', hint: 'dark light', run: cycleMode },
@@ -206,8 +207,11 @@ export default function Home() {
 
       <Daily subj={subj} />
       <div className="rail" role="group" aria-label="Subject">
-        {Object.keys(SUBJ).map(n => <button key={n} className="chip" aria-pressed={n === subj} onClick={() => { setSubj(n); store.set('subj', n); sfx('pop') }}>{n}</button>)}
+        {(POPULAR.includes(subj) ? POPULAR : [subj, ...POPULAR]).map(n => <button key={n} className="chip" aria-pressed={n === subj} onClick={() => { setSubj(n); store.set('subj', n); sfx('pop') }}>{n}</button>)}
       </div>
+      <div className="subjpick"><label className="note" htmlFor="allsubj">All subjects</label>
+        <select id="allsubj" value={ALL_NAMES.includes(subj) ? subj : ''} aria-label="Choose from all subjects" onChange={e => { const n = e.target.value; if (n) { setSubj(n); store.set('subj', n); sfx('pop') } }}>
+          {GROUP_ORDER.map(g => <optgroup key={g} label={g}>{ALL_NAMES.filter(n => groupOf(n) === g).sort().map(n => <option key={n} value={n}>{n}</option>)}</optgroup>)}</select></div>
       <div className="topic"><input value={topic} onChange={e => setTopic(e.target.value)} placeholder="Topic (optional), for example: Quadratic equations, Photosynthesis, Rates of reaction" aria-label="Topic" /></div>
 
       <div className="tabs" role="tablist" ref={tabsRef}>
@@ -215,7 +219,7 @@ export default function Home() {
         <span className="tab-ind" style={{ left: ind.l, width: ind.w }} />
       </div>
       <div className={'panel slide-' + dir} key={tab}>
-        <div className="tip"><b>{subj} exam tip.</b> {SUBJ[subj]}</div>
+        <div className="tip"><b>{subj} exam tip.</b> {SUBJ[subj] ?? tipFor(subj)}</div>
         {tab === 'ask' && <Ask api={api} onMood={m => setMood(m)} seed={askSeed} />}
         {tab === 'quiz' && <Quiz api={api} onFinish={finishQuiz} onCombo={n => { if (n >= 2) { sfx('good'); if (n === 5) { confetti(0.7); say('Combo king! ⚡') } } }} level={`${cur.e} ${cur.n}`} />}
         {tab === 'cards' && <Cards api={api} onFinish={(k, t) => { award({ k: 'cards', known: k, total: t }); confetti(k / t >= 0.6 ? 1.2 : 0.5); sfx('win'); say('Deck complete!') }} />}
@@ -228,7 +232,7 @@ export default function Home() {
         {tab === 'lab' && <Lab api={api} />}
         {tab === 'track' && <Track api={api} />}
         {tab === 'boost' && <Boost api={api} />}
-        {tab === 'weak' && <WeakSpots onExplain={(s, t) => { if (SUBJ[s]) { setSubj(s); store.set('subj', s) } setTopic(t); setAskSeed({ t: `I keep losing marks on "${t}" in ${s}. Explain it step by step, show how marks are earned in the exam, and end with a quick question to check I understand.`, n: Date.now() }); changeTab('ask') }} onQuiz={(s, t) => { if (SUBJ[s]) { setSubj(s); store.set('subj', s) } setTopic(t); changeTab('quiz') }} />}
+        {tab === 'weak' && <WeakSpots onExplain={(s, t) => { if (isSubject(s)) { setSubj(s); store.set('subj', s) } setTopic(t); setAskSeed({ t: `I keep losing marks on "${t}" in ${s}. Explain it step by step, show how marks are earned in the exam, and end with a quick question to check I understand.`, n: Date.now() }); changeTab('ask') }} onQuiz={(s, t) => { if (isSubject(s)) { setSubj(s); store.set('subj', s) } setTopic(t); changeTab('quiz') }} />}
         {tab === 'igcse' && <IgcseHub subj={subj} />}
         {tab === 'league' && <League api={api} />}
         {tab === 'me' && <Me api={api} pct={pct} />}

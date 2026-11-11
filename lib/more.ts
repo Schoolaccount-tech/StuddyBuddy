@@ -124,6 +124,14 @@ export const SYLLABUS: Record<string, string[]> = {
   'Geography': ['Rivers', 'Coasts', 'Plate tectonics', 'Weather & climate', 'Population', 'Settlement', 'Economic activity', 'Environment'],
   'History': ['Causes of WWI', 'Peace treaties', 'Rise of dictators', 'WWII', 'Cold War', 'Independence movements', 'Source skills', 'Essay writing'],
   'Economics': ['Basic problem', 'Demand & supply', 'Money & banking', 'Government', 'Labour', 'Trade', 'Development', 'Inflation'],
+  'Literature (English)': ['Poetry: language and imagery', 'Poetry: structure and form', 'Prose: character', 'Prose: theme and setting', 'Drama: character and conflict', 'Drama: staging and audience', 'Using quotations', 'Writer’s purpose and effect', 'Unseen text analysis', 'Essay planning'],
+  'Design and Technology': ['Design briefs and specifications', 'Research and user needs', 'Sketching and modelling', 'Materials and their properties', 'Tools, equipment and processes', 'Manufacturing methods', 'Mechanisms and systems', 'Sustainability and the environment', 'Testing and evaluating', 'Health and safety'],
+  'Fashion and Textiles': ['Fibres and fabrics', 'Fabric properties and care', 'Pattern making and body measurements', 'Garment construction', 'Seams, hems and finishes', 'Colour, print and decoration', 'Fashion design and trends', 'Sustainable fashion', 'Sewing machine and equipment', 'Evaluating a finished garment'],
+  'CAD (Computer-Aided Design)': ['What CAD is and why it is used', '2D drawing tools', '3D modelling: extrude and revolve', 'Fillets, chamfers and holes', 'Dimensions and constraints', 'Orthographic and isometric views', 'Assemblies and exploded views', 'Rendering and materials', 'CAD and CAM (laser cutting and 3D printing)', 'File formats and sharing'],
+  'Technical Graphics': ['Line types and lettering', 'Orthographic projection', 'Isometric drawing', 'Sectional views', 'Dimensioning', 'Development of surfaces', 'Perspective', 'Assembly drawings'],
+  'Art and Design': ['Research and artists', 'Drawing and observation', 'Colour and tone', 'Composition', 'Experimenting with media', 'Developing ideas', 'Annotation', 'Final piece and evaluation'],
+  'Food and Nutrition': ['Nutrients and their functions', 'Healthy eating guidelines', 'Dietary needs through life', 'Food science', 'Food safety and hygiene', 'Cooking methods', 'Planning meals', 'Food provenance and sustainability'],
+  'Information and Communication Technology': ['Hardware and software', 'Networks and the internet', 'Spreadsheets', 'Databases', 'Document production', 'Presentations and websites', 'Safety and security', 'Effects of ICT'],
   'Accounting': ['Double entry', 'Ledgers', 'Trial balance', 'Income statement', 'Balance sheet', 'Bank reconciliation', 'Depreciation', 'Ratios'],
 }
 
