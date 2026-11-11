@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 import { ai } from '@/lib/api'
 import { sfx, shareCard } from '@/lib/fx'
 import type { Miss } from '@/lib/progress'
+import { recordTopic, addMistake } from '@/lib/learn'
 import type { Api } from './api'
 
-type Q = { q: string; options: string[]; answer: number; explain: string }
+type Q = { q: string; options: string[]; answer: number; explain: string; topic?: string }
 const DIFF = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard'], ['exam', 'Exam level']] as const
 const SECS = 20
 
@@ -27,6 +28,8 @@ export default function Quiz({ api, onFinish, onCombo, level }: { api: Api; onFi
   function pick(j: number) {
     if (!q || sel !== null) return
     const ok = j === q.answer; const nc = ok ? combo + 1 : 0
+    const tp = q.topic || api.topic || 'General'; recordTopic(api.subj, tp, ok ? 1 : 0, 1)
+    if (!ok) addMistake({ subj: api.subj, topic: tp, type: j === -1 ? 'Ran out of time' : 'Knowledge gap', note: q.explain, src: 'quiz', q: q.q, a: q.options[q.answer] })
     setSel(j); setCombo(nc); best.current = Math.max(best.current, nc); sfx(ok ? 'good' : 'bad')
     if (ok) { setRight(r => r + 1); onCombo(nc); if (retake.current) api.patch(p => ({ ...p, miss: p.miss.filter(m => m.q !== q.q) })) }
     else { setWrongs(w => [...w, q]); const m: Miss = { ...q, subj: api.subj }; api.patch(p => ({ ...p, miss: [m, ...p.miss.filter(x => x.q !== q.q)].slice(0, 40) })) }

@@ -28,7 +28,7 @@ export default function Live({ code, staff, me }: Props) {
     <form onSubmit={join} className="livejoin"><h3>🎮 Join a live game</h3><p className="note">Enter the PIN shown on the host’s screen.</p>
       <input className="pin" inputMode="numeric" pattern="[0-9]*" maxLength={6} value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ''))} placeholder="Game PIN" aria-label="Game PIN" autoComplete="off" />
       <button className="btn" disabled={busy}>{busy ? 'Joining…' : 'Join'}</button>{err && <div className="notice">{err}</div>}</form>
-    <div className="livehost"><h3>📺 Host a game</h3><p className="note">{staff ? 'Teacher-hosted games earn full competition points.' : 'Run a game for your friends. Practice points count when 3 or more play, up to the daily cap.'}</p>
+    <div className="livehost"><h3>📺 Host a game</h3><p className="note">{staff ? 'Teacher-hosted games earn full competition points.' : 'Run a game for your friends. League points count when 3 or more play. There is no daily cap on live games.'}</p>
       <button className="btn ghost" onClick={() => setMode('host')}>Create a game</button></div></div>
 }
 
@@ -101,7 +101,7 @@ function Game({ pin, host, code, staff, onExit }: { pin: string; host: boolean; 
   const Podium = () => <div className="podium">{[1, 0, 2].map(i => s.board[i] && <div key={i} className={'pod p' + (i + 1)}><span className="pn">{s.board[i].who}</span><span className="ps">{s.board[i].score}</span><div className="pb">{['🥇', '🥈', '🥉'][i]}</div></div>)}</div>
 
   if (s.phase === 'finished') return <div className="game">{Head}<h2 className="center">🏁 Game over!</h2><Podium />{s.board.length > 3 && <Board rows={s.board.slice(3)} />}
-    {s.me && <div className="resultme"><b>You finished #{s.me.rank}</b> with {s.me.score} points · {s.me.correct_total} correct{s.counts ? (s.me.league_points > 0 ? <> · <b>+{s.me.league_points} league points</b> 🛡️</> : <span className="note"> · no league points this time (needs 3+ players, or your daily practice cap is reached)</span>) : ''}</div>}
+    {s.me && <div className="resultme"><b>You finished #{s.me.rank}</b> with {s.me.score} points · {s.me.correct_total} correct{s.counts ? (s.me.league_points > 0 ? <> · <b>+{s.me.league_points} league points</b> 🛡️</> : <span className="note"> · no league points this time (classmate-hosted games need 3 or more players)</span>) : ''}</div>}
     {host && s.counts && <p className="note">League points have been added for players.</p>}<div className="row"><button className="btn" onClick={onExit}>Done</button></div></div>
 
   if (s.phase === 'lobby') return <div className="game">{Head}

@@ -29,7 +29,7 @@ async function shrink(file: File): Promise<{ type: string; data: string; url: st
   const url = c.toDataURL('image/jpeg', 0.82); return { type: 'image/jpeg', data: url.split(',')[1], url }
 }
 
-export default function Ask({ api, onMood }: { api: Api; onMood: (m: 'idle' | 'think') => void }) {
+export default function Ask({ api, onMood, seed }: { api: Api; onMood: (m: 'idle' | 'think') => void; seed?: { t: string; n: number } | null }) {
   const [canMic, setCanMic] = useState(false)
   useEffect(() => { setCanMic(canListen()) }, [])
   const [log, setLog] = useState<Msg[]>([{ role: 'assistant', content: "Hi, I'm **Wise Owl** 🦉. Ask me **anything**: IGCSE subjects, homework, essays, coding, general knowledge. Tap 📷 to photograph a question and I'll solve it step by step." }])
@@ -40,6 +40,7 @@ export default function Ask({ api, onMood }: { api: Api; onMood: (m: 'idle' | 't
   const scroll = () => end.current?.scrollIntoView({ block: 'nearest' })
   useEffect(() => { void scroll() }, [log, busy]) // eslint-disable-line
   useEffect(() => () => { voiceRef.current = false; stop.current?.(); stopSpeak() }, [])
+  useEffect(() => { if (seed) setQ(seed.t); return undefined }, [seed?.n]) // eslint-disable-line
   const subject = sub || api.subj
   const starters = ['Explain the main ideas simply', 'What do examiners usually ask about this?', 'Give me a worked example', 'Common mistakes to avoid']
 

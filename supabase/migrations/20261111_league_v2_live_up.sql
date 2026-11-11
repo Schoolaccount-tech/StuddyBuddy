@@ -220,7 +220,7 @@ end $$;
 
 -- Internal: close a game and credit league points once. Staff-hosted games use the competition rules; student-hosted games are practice (needs 3+ players, daily cap).
 create or replace function public.lg_game_finish(p_id uuid) returns void language plpgsql security definer set search_path = public as $$
-declare g public.lg_games; r record; v_total int; v_ip int; v_hp int; v_season int := public.lg_season(); v_players int; v_ri int; v_rh int; v_ci int; v_ch int; v_ui int; v_uh int; v_units int;
+declare g public.lg_games; r record; v_total int; v_ip int; v_hp int; v_season int := public.lg_season(); v_players int; v_ri int; v_rh int; v_units int;
 begin
   select * into g from public.lg_games where id = p_id for update;
   if g.status = 'finished' then return; end if;
@@ -236,13 +236,12 @@ begin
       if v_ip > 0 or v_hp > 0 then
         insert into public.lg_ledger(season_id, student_id, source, ref, subject, ip, hp, note) values (v_season, r.student_id, 'event', 'game:' || p_id::text, g.subject, v_ip, v_hp, 'Live game: ' || g.title) on conflict do nothing; end if;
     elsif v_players >= 3 and r.correct > 0 then
+      -- Classmate-hosted games: no daily cap, and they do not use up the AI-practice cap. Needs 3+ players; one payment per game.
       select x.ip, x.hp into v_ri, v_rh from public.lg_rules x where x.key = 'practice_quiz' and x.active;
-      select x.ip, x.hp into v_ci, v_ch from public.lg_rules x where x.key = 'practice_daily_cap' and x.active;
-      select coalesce(sum(l.ip), 0), coalesce(sum(l.hp), 0) into v_ui, v_uh from public.lg_ledger l where l.student_id = r.student_id and l.source in ('practice','mission','streak') and l.ip > 0 and public.lg_day(l.created_at) = public.lg_day();
       v_units := least(r.correct, 10);
-      v_ip := least(v_units * coalesce(v_ri, 0), greatest(coalesce(v_ci, 0) - v_ui, 0)); v_hp := least(v_units * coalesce(v_rh, 0), greatest(coalesce(v_ch, 0) - v_uh, 0));
+      v_ip := v_units * coalesce(v_ri, 0); v_hp := v_units * coalesce(v_rh, 0);
       if v_ip > 0 or v_hp > 0 then
-        insert into public.lg_ledger(season_id, student_id, source, ref, subject, ip, hp, note) values (v_season, r.student_id, 'practice', 'game:' || p_id::text, g.subject, v_ip, v_hp, 'Classmate-hosted game: ' || g.title) on conflict do nothing; end if;
+        insert into public.lg_ledger(season_id, student_id, source, ref, subject, ip, hp, note) values (v_season, r.student_id, 'event', 'game:' || p_id::text, g.subject, v_ip, v_hp, 'Classmate-hosted game: ' || g.title) on conflict do nothing; end if;
     end if;
   end loop;
 end $$;

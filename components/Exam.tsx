@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { ai } from '@/lib/api'
+import { recordTopic, addMistake } from '@/lib/learn'
 import { sfx, confetti } from '@/lib/fx'
 import type { Api } from './api'
 
@@ -19,7 +20,7 @@ export default function Exam({ api }: { api: Api }) {
     if (!q || !ans.trim()) return; setBusy('m'); setErr('')
     try {
       const j = await ai({ mode: 'mark', subject: api.subj, question: q.question, scheme: q.scheme, marks: q.marks, answer: ans }); const r: Res = j.data; setRes(r)
-      api.award({ k: 'exam', awarded: r.awarded, marks: r.marks }); sfx(r.awarded / r.marks >= 0.6 ? 'win' : 'pop'); if (r.awarded / r.marks >= 0.7) confetti(r.awarded === r.marks ? 1.6 : 1)
+      api.award({ k: 'exam', awarded: r.awarded, marks: r.marks }); { const tp = (q as any).topic || api.topic || 'General'; recordTopic(api.subj, tp, r.awarded, r.marks); if (r.awarded < r.marks) addMistake({ subj: api.subj, topic: tp, type: 'Not enough detail', note: r.feedback, src: 'exam', q: q.question, a: ans.slice(0, 300) }) } sfx(r.awarded / r.marks >= 0.6 ? 'win' : 'pop'); if (r.awarded / r.marks >= 0.7) confetti(r.awarded === r.marks ? 1.6 : 1)
     } catch (e: any) { setErr(e.message) }
     setBusy('')
   }

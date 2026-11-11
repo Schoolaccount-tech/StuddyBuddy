@@ -65,13 +65,13 @@ How you answer:
     }
   } else if (mode === 'quiz') {
     max = 4000; const n = body.count === 10 ? 10 : 5, lv = LEVELS[body.difficulty] ?? LEVELS.medium
-    messages = [{ role: 'user', content: `Write ${n} multiple-choice revision questions, difficulty: ${lv}. Return ONLY a JSON array of ${n} objects: {"q": string, "options": [4 short strings], "answer": index 0-3, "explain": one or two sentences}. Spread the correct answers across positions.` }]
+    messages = [{ role: 'user', content: `Write ${n} multiple-choice revision questions, difficulty: ${lv}. Return ONLY a JSON array of ${n} objects: {"q": string, "topic": the specific syllabus topic this question tests (2 to 5 words), "options": [4 short strings], "answer": index 0-3, "explain": one or two sentences}. Spread the correct answers across positions.` }]
   } else if (mode === 'cards') {
     max = 2000
     messages = [{ role: 'user', content: 'Write 8 revision flashcards. Return ONLY a JSON array of 8 objects: {"front": short question or term, "back": clear answer under 30 words}.' }]
   } else if (mode === 'exam') {
     max = 1200
-    messages = [{ role: 'user', content: `Write ONE exam-style question worth 3 to 6 marks. Return ONLY JSON: {"question": string, "marks": number, "scheme": [one short marking point per mark], "hint": one short hint}. Seed: ${str(body.seed, 20)}` }]
+    messages = [{ role: 'user', content: `Write ONE exam-style question worth 3 to 6 marks. Return ONLY JSON: {"question": string, "topic": specific syllabus topic in 2 to 5 words, "marks": number, "scheme": [one short marking point per mark], "hint": one short hint}. Seed: ${str(body.seed, 20)}` }]
   } else if (mode === 'mark') {
     max = 700
     const scheme = (Array.isArray(body.scheme) ? body.scheme : []).slice(0, 8).map((x: any) => str(x, 200))
@@ -102,7 +102,7 @@ How you answer:
     try {
       if (mode === 'quiz') {
         const data = (extract(text, '[') as any[]).filter(q => q && typeof q.q === 'string' && Array.isArray(q.options) && q.options.length === 4 && Number.isInteger(q.answer) && q.answer >= 0 && q.answer <= 3)
-          .map(q => ({ q: str(q.q, 400), options: q.options.map((o: any) => str(o, 160)), answer: q.answer, explain: str(q.explain, 400) }))
+          .map(q => ({ q: str(q.q, 400), options: q.options.map((o: any) => str(o, 160)), answer: q.answer, explain: str(q.explain, 400), topic: str(q.topic, 60) }))
         if (!data.length) throw new Error('bad')
         return NextResponse.json({ data })
       }
@@ -115,7 +115,7 @@ How you answer:
       if (mode === 'exam') {
         const scheme = (Array.isArray(o.scheme) ? o.scheme : []).slice(0, 8).map((x: any) => str(x, 200))
         if (!o.question || !scheme.length) throw new Error('bad')
-        return NextResponse.json({ data: { question: str(o.question, 700), marks: Math.max(1, Math.min(8, Number(o.marks) || scheme.length)), scheme, hint: str(o.hint, 200) } })
+        return NextResponse.json({ data: { question: str(o.question, 700), marks: Math.max(1, Math.min(8, Number(o.marks) || scheme.length)), scheme, hint: str(o.hint, 200), topic: str(o.topic, 60) } })
       }
       if (mode === 'mark') {
         const m = body.__marks as number

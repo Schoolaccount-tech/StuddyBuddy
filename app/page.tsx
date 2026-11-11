@@ -23,6 +23,7 @@ import Track from '@/components/Track'
 import Boost from '@/components/Boost'
 import League from '@/components/League'
 import IgcseHub from '@/components/IgcseHub'
+import WeakSpots from '@/components/Weak'
 import { reportPractice, getCode } from '@/lib/league'
 import Share from '@/components/Share'
 import { readLook, applyLook } from '@/lib/a11y'
@@ -44,12 +45,12 @@ const SUBJ: Record<string, string> = {
   'Accounting': 'Lay out ledgers and statements neatly and label every line. Check that the totals balance.',
 }
 type Toast = { id: number; e: string; title: string; sub: string; big: boolean }
-const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['boost', 'Boost'], ['igcse', 'IGCSE Hub'], ['league', 'Competitions'], ['me', 'Progress']] as const
+const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['boost', 'Boost'], ['weak', 'Weak spots'], ['igcse', 'IGCSE Hub'], ['league', 'Competitions'], ['me', 'Progress']] as const
 type Tab = typeof TABS[number][0]
 const ACCENTS = [['owl', '#f2c500'], ['ocean', '#38bdf8'], ['sunset', '#fb7185'], ['forest', '#4ade80'], ['violet', '#a78bfa'], ['mint', '#2dd4bf'], ['lava', '#fb923c'], ['lime', '#a3e635']] as const
 
 export default function Home() {
-  const [subj, setSubj] = useState('Mathematics'); const [topic, setTopic] = useState(''); const [tab, setTab] = useState<Tab>('ask'); const prevTab = useRef(0)
+  const [subj, setSubj] = useState('Mathematics'); const [topic, setTopic] = useState(''); const [askSeed, setAskSeed] = useState<{ t: string; n: number } | null>(null); const [tab, setTab] = useState<Tab>('ask'); const prevTab = useRef(0)
   const [p, setP] = useState<Prog>(DEFAULT); const pRef = useRef<Prog>(DEFAULT)
   const [toasts, setToasts] = useState<Toast[]>([]); const idc = useRef(0)
   const [msg, setMsg] = useState(''); const [mood, setMood] = useState<Mood>('idle'); const mt = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -150,7 +151,7 @@ export default function Home() {
     const spinReady = p.spin !== dayKey()
 
   const cmds: Cmd[] = [
-    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🎓', '🛡️', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
+    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🎯', '🎓', '🛡️', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
     ...Object.keys(SUBJ).map(n => ({ id: 's' + n, e: '📚', label: `Subject: ${n}`, hint: 'subject', run: () => { setSubj(n); store.set('subj', n); sfx('pop') } })),
     ...ACCENTS.map(([n]) => ({ id: 'a' + n, e: '🎨', label: `Theme: ${n}`, hint: 'colour', run: () => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') } })),
     { id: 'snd', e: sound ? '🔇' : '🔊', label: sound ? 'Mute sounds' : 'Turn sounds on', run: toggleSound },
@@ -215,7 +216,7 @@ export default function Home() {
       </div>
       <div className={'panel slide-' + dir} key={tab}>
         <div className="tip"><b>{subj} exam tip.</b> {SUBJ[subj]}</div>
-        {tab === 'ask' && <Ask api={api} onMood={m => setMood(m)} />}
+        {tab === 'ask' && <Ask api={api} onMood={m => setMood(m)} seed={askSeed} />}
         {tab === 'quiz' && <Quiz api={api} onFinish={finishQuiz} onCombo={n => { if (n >= 2) { sfx('good'); if (n === 5) { confetti(0.7); say('Combo king! ⚡') } } }} level={`${cur.e} ${cur.n}`} />}
         {tab === 'cards' && <Cards api={api} onFinish={(k, t) => { award({ k: 'cards', known: k, total: t }); confetti(k / t >= 0.6 ? 1.2 : 0.5); sfx('win'); say('Deck complete!') }} />}
         {tab === 'exam' && <Exam api={api} />}
@@ -227,6 +228,7 @@ export default function Home() {
         {tab === 'lab' && <Lab api={api} />}
         {tab === 'track' && <Track api={api} />}
         {tab === 'boost' && <Boost api={api} />}
+        {tab === 'weak' && <WeakSpots onExplain={(s, t) => { if (SUBJ[s]) { setSubj(s); store.set('subj', s) } setTopic(t); setAskSeed({ t: `I keep losing marks on "${t}" in ${s}. Explain it step by step, show how marks are earned in the exam, and end with a quick question to check I understand.`, n: Date.now() }); changeTab('ask') }} onQuiz={(s, t) => { if (SUBJ[s]) { setSubj(s); store.set('subj', s) } setTopic(t); changeTab('quiz') }} />}
         {tab === 'igcse' && <IgcseHub subj={subj} />}
         {tab === 'league' && <League api={api} />}
         {tab === 'me' && <Me api={api} pct={pct} />}
