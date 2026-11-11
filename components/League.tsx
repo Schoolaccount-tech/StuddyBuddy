@@ -45,7 +45,7 @@ function Board({ period, subject }: { period: string; subject: string }) {
     <b className="lgpts">{r.points}</b></div>)}</div>
 }
 
-function Gate({ onSignIn, note }: { onSignIn: (code: string, remember: boolean) => Promise<string>; note?: string }) {
+export function Gate({ onSignIn, note }: { onSignIn: (code: string, remember: boolean) => Promise<string>; note?: string }) {
   const [mode, setMode] = useState<'name' | 'code'>('name'); const [roster, setRoster] = useState<any[] | null>(null); const [q, setQ] = useState(''); const [pick, setPick] = useState<any>(null)
   const [c, setC] = useState(''); const [rem, setRem] = useState(false); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
   useEffect(() => { let on = true; rpc<any[]>('lg_roster', {}).then(r => { if (on) setRoster(r) }).catch(e => { if (on) setErr(e.message) }); return () => { on = false } }, [])

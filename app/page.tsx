@@ -24,7 +24,10 @@ import Boost from '@/components/Boost'
 import League from '@/components/League'
 import IgcseHub from '@/components/IgcseHub'
 import WeakSpots from '@/components/Weak'
-import { POPULAR, ALL_NAMES, GROUP_ORDER, groupOf, tipFor, isSubject } from '@/lib/subjects'
+import Review from '@/components/Review'
+import Rewards from '@/components/Rewards'
+import { POPULAR, ALL_NAMES, groupOf, tipFor, isSubject } from '@/lib/subjects'
+import Reviews from '@/components/Reviews'
 import { reportPractice, getCode } from '@/lib/league'
 import Share from '@/components/Share'
 import { readLook, applyLook } from '@/lib/a11y'
@@ -32,6 +35,7 @@ import Palette, { type Cmd } from '@/components/Palette'
 import { CursorTrail, Ripple, Konami, Sky, Ticker, Daily, type Trail } from '@/components/Extras'
 import type { Api, Cfg } from '@/components/api'
 
+const RAIL = [...POPULAR, ...ALL_NAMES.filter(n => !POPULAR.includes(n)).sort((a, b) => groupOf(a).localeCompare(groupOf(b)) || a.localeCompare(b))]
 const SUBJ: Record<string, string> = {
   'Mathematics': 'Show every step of working. Method marks are given even when the final answer is wrong, so never skip lines.',
   'Biology': 'Learn command words: describe, explain, suggest. Use the key term from the syllabus, then link it to the cause.',
@@ -46,12 +50,12 @@ const SUBJ: Record<string, string> = {
   'Accounting': 'Lay out ledgers and statements neatly and label every line. Check that the totals balance.',
 }
 type Toast = { id: number; e: string; title: string; sub: string; big: boolean }
-const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['boost', 'Boost'], ['weak', 'Weak spots'], ['igcse', 'IGCSE Hub'], ['league', 'Competitions'], ['me', 'Progress']] as const
+const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['boost', 'Boost'], ['weak', 'Weak spots'], ['review', 'Review'], ['igcse', 'IGCSE Hub'], ['league', 'Competitions'], ['rewards', 'Rewards'], ['reviews', 'Reviews'], ['me', 'Progress']] as const
 type Tab = typeof TABS[number][0]
 const ACCENTS = [['owl', '#f2c500'], ['ocean', '#38bdf8'], ['sunset', '#fb7185'], ['forest', '#4ade80'], ['violet', '#a78bfa'], ['mint', '#2dd4bf'], ['lava', '#fb923c'], ['lime', '#a3e635']] as const
 
 export default function Home() {
-  const [subj, setSubj] = useState('Mathematics'); const [topic, setTopic] = useState(''); const [askSeed, setAskSeed] = useState<{ t: string; n: number } | null>(null); const [tab, setTab] = useState<Tab>('ask'); const prevTab = useRef(0)
+  const [subj, setSubj] = useState('Mathematics'); const [topic, setTopic] = useState(''); const [subjQ, setSubjQ] = useState(''); const [askSeed, setAskSeed] = useState<{ t: string; n: number } | null>(null); const [tab, setTab] = useState<Tab>('ask'); const prevTab = useRef(0)
   const [p, setP] = useState<Prog>(DEFAULT); const pRef = useRef<Prog>(DEFAULT)
   const [toasts, setToasts] = useState<Toast[]>([]); const idc = useRef(0)
   const [msg, setMsg] = useState(''); const [mood, setMood] = useState<Mood>('idle'); const mt = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -63,7 +67,7 @@ export default function Home() {
   const dir = TABS.findIndex(t => t[0] === tab) >= prevTab.current ? 'r' : 'l'
 
   useEffect(() => {
-    const s = store.get('subj', ''); if (s && (SUBJ[s] || isSubject(s))) setSubj(s)
+    const s = store.get('subj', ''); if (s && String(s).length <= 60) setSubj(String(s))
     setTip(TIPS[Math.floor(Date.now() / 864e5) % TIPS.length]); const ex = store.get('exam', ''); setDays(ex ? Math.ceil((new Date(ex + 'T00:00:00').getTime() - Date.now()) / 864e5) : null)
     const c = store.get<Partial<Cfg>>('cfg', {}); if (c && typeof c === 'object') { const n = { trail: (c.trail as Trail) || 'sparkle', party: !!c.party, crown: !!c.crown, remind: c.remind !== false }; cfgRef.current = n; setCfgS(n) }
     const rbo = store.get('rainbow', false); setRb(!!rbo); if (rbo) document.documentElement.dataset.rainbow = '1'
@@ -152,7 +156,7 @@ export default function Home() {
     const spinReady = p.spin !== dayKey()
 
   const cmds: Cmd[] = [
-    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🎯', '🎓', '🛡️', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
+    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🎯', '🔁', '🎓', '🛡️', '🎁', '⭐', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
     ...ALL_NAMES.map(n => ({ id: 's' + n, e: '📚', label: `Subject: ${n}`, hint: 'subject', run: () => { setSubj(n); store.set('subj', n); sfx('pop') } })),
     ...ACCENTS.map(([n]) => ({ id: 'a' + n, e: '🎨', label: `Theme: ${n}`, hint: 'colour', run: () => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') } })),
     { id: 'snd', e: sound ? '🔇' : '🔊', label: sound ? 'Mute sounds' : 'Turn sounds on', run: toggleSound },
@@ -206,12 +210,11 @@ export default function Home() {
       <div className="daily"><span className="spark">💡</span><div><b>Today’s study tip</b><br /><span className="note">{tip}</span></div></div>
 
       <Daily subj={subj} />
-      <div className="rail" role="group" aria-label="Subject">
-        {(POPULAR.includes(subj) ? POPULAR : [subj, ...POPULAR]).map(n => <button key={n} className="chip" aria-pressed={n === subj} onClick={() => { setSubj(n); store.set('subj', n); sfx('pop') }}>{n}</button>)}
+      <div className="subjpick"><input className="subjfind" value={subjQ} onChange={e => setSubjQ(e.target.value)} placeholder={`Find a subject (${ALL_NAMES.length} available)…`} aria-label="Find a subject" /><span className="note">Selected: <b>{subj}</b></span></div>
+      <div className="rail all" role="group" aria-label="Subject">
+        {(subjQ.trim() ? RAIL.filter(n => n.toLowerCase().includes(subjQ.trim().toLowerCase())) : RAIL).map(n => <button key={n} className="chip" aria-pressed={n === subj} onClick={() => { setSubj(n); store.set('subj', n); sfx('pop') }}>{n}</button>)}
+        {subjQ.trim() && !RAIL.some(n => n.toLowerCase().includes(subjQ.trim().toLowerCase())) && <button className="chip" onClick={() => { const n = subjQ.trim().slice(0, 60); setSubj(n); store.set('subj', n); setSubjQ(''); sfx('pop') }}>Use “{subjQ.trim().slice(0, 40)}” as my subject</button>}
       </div>
-      <div className="subjpick"><label className="note" htmlFor="allsubj">All subjects</label>
-        <select id="allsubj" value={ALL_NAMES.includes(subj) ? subj : ''} aria-label="Choose from all subjects" onChange={e => { const n = e.target.value; if (n) { setSubj(n); store.set('subj', n); sfx('pop') } }}>
-          {GROUP_ORDER.map(g => <optgroup key={g} label={g}>{ALL_NAMES.filter(n => groupOf(n) === g).sort().map(n => <option key={n} value={n}>{n}</option>)}</optgroup>)}</select></div>
       <div className="topic"><input value={topic} onChange={e => setTopic(e.target.value)} placeholder="Topic (optional), for example: Quadratic equations, Photosynthesis, Rates of reaction" aria-label="Topic" /></div>
 
       <div className="tabs" role="tablist" ref={tabsRef}>
@@ -233,6 +236,9 @@ export default function Home() {
         {tab === 'track' && <Track api={api} />}
         {tab === 'boost' && <Boost api={api} />}
         {tab === 'weak' && <WeakSpots onExplain={(s, t) => { if (isSubject(s)) { setSubj(s); store.set('subj', s) } setTopic(t); setAskSeed({ t: `I keep losing marks on "${t}" in ${s}. Explain it step by step, show how marks are earned in the exam, and end with a quick question to check I understand.`, n: Date.now() }); changeTab('ask') }} onQuiz={(s, t) => { if (isSubject(s)) { setSubj(s); store.set('subj', s) } setTopic(t); changeTab('quiz') }} />}
+        {tab === 'review' && <Review api={api} />}
+        {tab === 'reviews' && <Reviews />}
+        {tab === 'rewards' && <Rewards api={api} />}
         {tab === 'igcse' && <IgcseHub subj={subj} />}
         {tab === 'league' && <League api={api} />}
         {tab === 'me' && <Me api={api} pct={pct} />}

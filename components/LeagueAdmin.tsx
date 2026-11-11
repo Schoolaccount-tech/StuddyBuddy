@@ -33,7 +33,7 @@ export default function LeagueAdmin({ api, onChange }: { api: Api; onChange: () 
     <button className="btn" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>{msg && <div className="notice">{msg}</div>}</form>
   if (!ov) return <div>{msg ? <div className="notice">{msg}</div> : <div className="busy">Loading…</div>}</div>
   const admin = !!ov.admin
-  const T: [string, string][] = [['overview', 'Overview'], ['events', 'Competitions'], ['live', '🎮 Live game'], ['results', `Approvals (${ov.pending.length})`], ...(admin ? [['students', 'Students & houses'], ['points', 'Adjust points'], ['rules', 'Scoring rules']] as [string, string][] : []), ['audit', 'Audit log']]
+  const T: [string, string][] = [['overview', 'Overview'], ['events', 'Competitions'], ['live', '🎮 Live game'], ['results', `Approvals (${ov.pending.length})`], ['reviews', '⭐ Reviews'], ...(admin ? [['students', 'Students & houses'], ['points', 'Adjust points'], ['rules', 'Scoring rules']] as [string, string][] : []), ['audit', 'Audit log']]
   return <section className="lgadmin">
     <div className="row"><span className="note">Signed in as {s.email} ({admin ? 'admin' : 'teacher'})</span><button className="linkish" onClick={() => { staffOut(); setS(null); setOv(null) }}>Sign out</button></div>
     <div className="seg wrapseg cats">{T.map(([k, l]) => <button key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>)}</div>
@@ -41,6 +41,7 @@ export default function LeagueAdmin({ api, onChange }: { api: Api; onChange: () 
     {tab === 'overview' && <Overview ov={ov} admin={admin} run={run} busy={busy} />}
     {tab === 'events' && <Events ov={ov} run={run} busy={busy} admin={admin} api={api} />}
     {tab === 'live' && <Live staff={s.token} />}
+    {tab === 'reviews' && <ReviewMod call={call} />}
     {tab === 'results' && <Results ov={ov} run={run} admin={admin} />}
     {tab === 'students' && admin && <Students studs={studs} run={run} />}
     {tab === 'points' && admin && <Points studs={studs.length ? studs : null} load={loadStuds} run={run} />}
@@ -154,4 +155,15 @@ function RuleRow({ r, run }: { r: any; run: Run }) {
     <input type="number" className="num" value={hp} onChange={e => setHp(Number(e.target.value))} aria-label={r.label + ' house points'} />
     <input type="checkbox" checked={on} onChange={e => setOn(e.target.checked)} aria-label="Active" />
     <button className="btn ghost" onClick={() => run('lg_admin_set_rule', { p_key: r.key, p_ip: ip, p_hp: hp, p_active: on }, 'Rule saved.')}>Save</button></div>
+}
+
+function ReviewMod({ call }: { call: (fn: string, args?: object) => Promise<any> }) {
+  const [rows, setRows] = useState<any[] | null>(null); const [err, setErr] = useState('')
+  const load = async () => { try { setRows(await call('lg_admin_reviews')) } catch (e: any) { setErr(e.message) } }
+  useEffect(() => { void load(); return undefined }, []) // eslint-disable-line
+  async function decide(student: string, d: 'approve' | 'hide') { try { const r = await call('lg_admin_review_decide', { p_student: student, p_decision: d, p_note: null }); if (r.ok === false) setErr(r.error); else await load() } catch (e: any) { setErr(e.message) } }
+  if (!rows) return <div>{err ? <div className="notice">{err}</div> : <div className="busy">Loading…</div>}</div>
+  return <div>{err && <div className="notice">{err}</div>}<p className="note">Reviews only show to everyone after you approve them. Hide anything unkind, rude or personal.</p>
+    {!rows.length ? <p className="note">No reviews yet.</p> : rows.map(r => <div key={r.student} className="lgevent"><div><b>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</b> · {r.who} <span className="note">({r.status})</span><div>{r.body}</div></div>
+      <div className="stack">{r.status !== 'approved' && <button className="btn" onClick={() => decide(r.student, 'approve')}>Approve</button>}{r.status !== 'hidden' && <button className="btn ghost" onClick={() => decide(r.student, 'hide')}>Hide</button>}</div></div>)}</div>
 }
