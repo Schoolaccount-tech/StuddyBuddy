@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { rpc, getStaff, staffIn, staffOut, KINDS, when, type Staff } from '@/lib/league'
 import { ai } from '@/lib/api'
 import type { Api } from './api'
+import Live from './Live'
 
 type Q = { q: string; options: string[]; answer: number; explain: string }
 const blankQ = (): Q => ({ q: '', options: ['', '', '', ''], answer: 0, explain: '' })
@@ -32,13 +33,14 @@ export default function LeagueAdmin({ api, onChange }: { api: Api; onChange: () 
     <button className="btn" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>{msg && <div className="notice">{msg}</div>}</form>
   if (!ov) return <div>{msg ? <div className="notice">{msg}</div> : <div className="busy">Loading…</div>}</div>
   const admin = !!ov.admin
-  const T: [string, string][] = [['overview', 'Overview'], ['events', 'Competitions'], ['results', `Approvals (${ov.pending.length})`], ...(admin ? [['students', 'Students & houses'], ['points', 'Adjust points'], ['rules', 'Scoring rules']] as [string, string][] : []), ['audit', 'Audit log']]
+  const T: [string, string][] = [['overview', 'Overview'], ['events', 'Competitions'], ['live', '🎮 Live game'], ['results', `Approvals (${ov.pending.length})`], ...(admin ? [['students', 'Students & houses'], ['points', 'Adjust points'], ['rules', 'Scoring rules']] as [string, string][] : []), ['audit', 'Audit log']]
   return <section className="lgadmin">
     <div className="row"><span className="note">Signed in as {s.email} ({admin ? 'admin' : 'teacher'})</span><button className="linkish" onClick={() => { staffOut(); setS(null); setOv(null) }}>Sign out</button></div>
     <div className="seg wrapseg cats">{T.map(([k, l]) => <button key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>)}</div>
     {msg && <div className="notice" role="status">{msg}</div>}
     {tab === 'overview' && <Overview ov={ov} admin={admin} run={run} busy={busy} />}
     {tab === 'events' && <Events ov={ov} run={run} busy={busy} admin={admin} api={api} />}
+    {tab === 'live' && <Live staff={s.token} />}
     {tab === 'results' && <Results ov={ov} run={run} admin={admin} />}
     {tab === 'students' && admin && <Students studs={studs} run={run} />}
     {tab === 'points' && admin && <Points studs={studs.length ? studs : null} load={loadStuds} run={run} />}
@@ -125,7 +127,7 @@ function Students({ studs, run }: { studs: any[]; run: Run }) {
   const rows = studs.filter(s => s.name.toLowerCase().includes(q.toLowerCase()))
   return <div><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search students" aria-label="Search students" />
     <p className="note">Changing a house moves that student’s points for the whole season. A reason is required and is written to the audit log.</p>
-    {rows.map(s => <div key={s.id} className="lgrow"><span className="lgname">{s.name} <small className="note">{s.form || ''}{s.has_code ? '' : ' · no code'}</small></span>
+    {rows.map(s => <div key={s.id} className="lgrow"><span className="lgname">{s.name} <small className="note">{s.form || ''}{s.claimed ? ' · joined' : ' · not joined'}{s.has_code ? '' : ' · no code'}</small>{s.claimed && <button className="linkish" onClick={() => { const r = prompt(`Reset ${s.name}’s sign-in so they can pick their name again? Reason:`); if (r && r.length >= 3) run('lg_admin_reset_claim', { p_student: s.id, p_reason: r }, 'Sign-in reset.') }}> reset</button>}</span>
       <select value={s.house_id || ''} aria-label={'House for ' + s.name} onChange={e => { const id = Number(e.target.value); const r = prompt(`Reason for moving ${s.name} to ${houses.find(h => h.id === id)?.name}?`); if (r && r.length >= 3) run('lg_admin_set_house', { p_student: s.id, p_house: id, p_reason: r }, 'House updated.') }}>
         <option value="" disabled>No house</option>{houses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}</select><b className="lgpts">{s.points}</b></div>)}</div>
 }

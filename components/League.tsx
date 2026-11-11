@@ -4,8 +4,9 @@ import { rpc, lgReady, getCode, setCode, clearCode, PERIODS, KINDS, houseColour,
 import { sfx, confetti } from '@/lib/fx'
 import type { Api } from './api'
 import LeagueAdmin from './LeagueAdmin'
+import Live from './Live'
 
-const VIEWS = [['home', '🏠 Overview'], ['league', '🥇 Individual league'], ['houses', '🛡️ Houses'], ['play', '⚔️ Compete'], ['me', '👤 My profile'], ['trophies', '🏆 Trophies'], ['rules', '📜 Rules'], ['staff', '🔐 Staff']] as const
+const VIEWS = [['home', '🏠 Overview'], ['league', '🥇 Individual league'], ['houses', '🛡️ Houses'], ['live', '🎮 Live game'], ['play', '⚔️ Compete'], ['me', '👤 My profile'], ['trophies', '🏆 Trophies'], ['rules', '📜 Rules'], ['staff', '🔐 Staff']] as const
 type View = typeof VIEWS[number][0]
 
 function useRpc<T = any>(fn: string, args: object, deps: unknown[]) {
@@ -45,14 +46,23 @@ function Board({ period, subject }: { period: string; subject: string }) {
 }
 
 function Gate({ onSignIn, note }: { onSignIn: (code: string, remember: boolean) => Promise<string>; note?: string }) {
+  const [mode, setMode] = useState<'name' | 'code'>('name'); const [roster, setRoster] = useState<any[] | null>(null); const [q, setQ] = useState(''); const [pick, setPick] = useState<any>(null)
   const [c, setC] = useState(''); const [rem, setRem] = useState(false); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
+  useEffect(() => { let on = true; rpc<any[]>('lg_roster', {}).then(r => { if (on) setRoster(r) }).catch(e => { if (on) setErr(e.message) }); return () => { on = false } }, [])
+  async function claim() { if (!pick) return; setBusy(true); setErr(''); try { const r = await rpc('lg_claim', { p_student: pick.id }); if (!r.ok) setErr(r.error); else { const m = await onSignIn(r.token, true); if (m) setErr(m) } } catch (e: any) { setErr(e.message) } setBusy(false) }
   async function go(e: React.FormEvent) { e.preventDefault(); if (c.trim().length < 4) return; setBusy(true); setErr(''); const m = await onSignIn(c.trim(), rem); if (m) setErr(m); setBusy(false) }
-  return <form className="gate" onSubmit={go}>
-    <h3>Enter your student code</h3><p className="note">{note || 'Your 8-character student code is on your school ID. Ask your teacher if you do not have one.'}</p>
-    <div className="row" style={{ justifyContent: 'flex-start' }}><input className="grow" value={c} onChange={e => setC(e.target.value)} placeholder="Student code" aria-label="Student code" autoComplete="off" autoCapitalize="characters" maxLength={20} />
-      <button className="btn" disabled={busy}>{busy ? 'Checking…' : 'Continue'}</button></div>
-    <label className="switch"><input type="checkbox" checked={rem} onChange={e => setRem(e.target.checked)} /><span /> Remember me on this device (only on your own phone or laptop)</label>
-    {err && <div className="notice">{err}</div>}</form>
+  if (mode === 'code') return <form className="gate" onSubmit={go}><h3>Enter your student code</h3><p className="note">Your 8-character code is on your school ID.</p>
+    <div className="row" style={{ justifyContent: 'flex-start' }}><input className="grow" value={c} onChange={e => setC(e.target.value)} placeholder="Student code" aria-label="Student code" autoComplete="off" maxLength={20} /><button className="btn" disabled={busy}>{busy ? 'Checking…' : 'Continue'}</button></div>
+    <label className="switch"><input type="checkbox" checked={rem} onChange={e => setRem(e.target.checked)} /><span /> Remember me on this device</label>{err && <div className="notice">{err}</div>}
+    <button type="button" className="linkish" onClick={() => { setMode('name'); setErr('') }}>← Pick my name instead</button></form>
+  const list = (roster || []).filter(r => (r.name + ' ' + (r.form || '')).toLowerCase().includes(q.toLowerCase())).slice(0, 40)
+  return <div className="gate"><h3>Set your name &amp; join the league</h3><p className="note">{note || 'Find your name once. It is then locked to you, so nobody can join twice or pretend to be you.'}</p>
+    {pick ? <div className="claimconfirm"><p>Join as <b>{pick.name}</b>{pick.form ? ` (${pick.form})` : ''}?</p><p className="note">You can only do this once. Only pick your own name.</p>
+      <div className="row" style={{ justifyContent: 'flex-start' }}><button className="btn" onClick={claim} disabled={busy}>{busy ? 'Joining…' : 'Yes, that’s me'}</button><button className="btn ghost" onClick={() => setPick(null)}>Back</button></div></div> :
+      <><input value={q} onChange={e => setQ(e.target.value)} placeholder="Type to find your name" aria-label="Find your name" autoComplete="off" />
+        {!roster ? <div className="busy">Loading names…</div> : !list.length ? <p className="note">No matching name. It may already be taken. Ask your teacher.</p> : <div className="rosterlist">{list.map(r => <button key={r.id} className="rosteritem" onClick={() => { setPick(r); sfx('pop') }}>{r.name}<small>{r.form || ''}</small></button>)}</div>}</>}
+    {err && <div className="notice">{err}</div>}
+    <button type="button" className="linkish" onClick={() => { setMode('code'); setErr('') }}>I have a student code</button></div>
 }
 
 function Play({ code, me, refresh }: { code: string; me: any; refresh: () => void }) {
@@ -146,6 +156,8 @@ export default function League({ api }: { api: Api }) {
     {view === 'houses' && <section>
       <h3>Standings</h3><div className="lg3"><div><h4>This week</h4><HouseBars rows={hw || []} /></div><div><h4>This month</h4><HouseBars rows={hm || []} /></div><div><h4>Season</h4><HouseBars rows={hs || []} /></div></div>
       <h3>Championship history</h3>{!hall || !hall.length ? <p className="note">No season has finished yet. The first champions will appear here.</p> : hall.map((h: any, i: number) => <div key={i} className="lgevent"><div><b>{h.season}</b><div className="note">{(h.snapshot?.houses || []).map((x: any) => `${x.house} ${x.points}`).join(' · ')}</div></div><div className="lgphase open">{h.winner ? '🏆 ' + h.winner : h.snapshot?.tie ? 'Tied' : '–'}</div></div>)}</section>}
+
+    {view === 'live' && <section>{!code || !me ? <Gate onSignIn={signIn} note="Set your name once to join live games and the league." /> : <Live code={code} me={me} />}</section>}
 
     {view === 'play' && <section>{!code || !me ? <Gate onSignIn={signIn} /> : <>
       <p className="note">Signed in as <b>{me.name}</b> <Chip house={me.house} /> · <button className="linkish" onClick={signOut}>not you?</button></p><Play code={code} me={me} refresh={refresh} /></>}</section>}
