@@ -22,6 +22,7 @@ import Lab from '@/components/Lab'
 import Track from '@/components/Track'
 import Boost from '@/components/Boost'
 import League from '@/components/League'
+import IgcseHub from '@/components/IgcseHub'
 import { reportPractice, getCode } from '@/lib/league'
 import Share from '@/components/Share'
 import { readLook, applyLook } from '@/lib/a11y'
@@ -43,7 +44,7 @@ const SUBJ: Record<string, string> = {
   'Accounting': 'Lay out ledgers and statements neatly and label every line. Check that the totals balance.',
 }
 type Toast = { id: number; e: string; title: string; sub: string; big: boolean }
-const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['boost', 'Boost'], ['league', 'Competitions'], ['me', 'Progress']] as const
+const TABS = [['ask', 'Ask Buddy'], ['quiz', 'Quiz'], ['cards', 'Cards'], ['exam', 'Exam'], ['focus', 'Focus'], ['plan', 'Planner'], ['tools', 'Tools'], ['play', 'Play'], ['lab', 'Lab'], ['track', 'Track'], ['boost', 'Boost'], ['igcse', 'IGCSE Hub'], ['league', 'Competitions'], ['me', 'Progress']] as const
 type Tab = typeof TABS[number][0]
 const ACCENTS = [['owl', '#f2c500'], ['ocean', '#38bdf8'], ['sunset', '#fb7185'], ['forest', '#4ade80'], ['violet', '#a78bfa'], ['mint', '#2dd4bf'], ['lava', '#fb923c'], ['lime', '#a3e635']] as const
 
@@ -149,7 +150,7 @@ export default function Home() {
     const spinReady = p.spin !== dayKey()
 
   const cmds: Cmd[] = [
-    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🛡️', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
+    ...TABS.map(([k, l], i) => ({ id: 't' + k, e: ['💬', '🧠', '🃏', '📝', '⏱️', '🗓️', '🛠️', '🎮', '🧪', '📈', '🚀', '🎓', '🛡️', '🏆'][i] || '➡️', label: `Go to ${l}`, hint: 'tab', run: () => changeTab(k) })),
     ...Object.keys(SUBJ).map(n => ({ id: 's' + n, e: '📚', label: `Subject: ${n}`, hint: 'subject', run: () => { setSubj(n); store.set('subj', n); sfx('pop') } })),
     ...ACCENTS.map(([n]) => ({ id: 'a' + n, e: '🎨', label: `Theme: ${n}`, hint: 'colour', run: () => { setAccent(n); store.set('accent', n); document.documentElement.dataset.accent = n; sfx('pop') } })),
     { id: 'snd', e: sound ? '🔇' : '🔊', label: sound ? 'Mute sounds' : 'Turn sounds on', run: toggleSound },
@@ -226,6 +227,7 @@ export default function Home() {
         {tab === 'lab' && <Lab api={api} />}
         {tab === 'track' && <Track api={api} />}
         {tab === 'boost' && <Boost api={api} />}
+        {tab === 'igcse' && <IgcseHub subj={subj} />}
         {tab === 'league' && <League api={api} />}
         {tab === 'me' && <Me api={api} pct={pct} />}
       </div>

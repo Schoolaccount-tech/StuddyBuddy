@@ -13,6 +13,7 @@ function limited(ip: string) {
 
 const SUBJECTS = ['Mathematics', 'Biology', 'Chemistry', 'Physics', 'English Language', 'Computer Science', 'Business Studies', 'Geography', 'History', 'Economics', 'Accounting']
 const STYLES: Record<string, string> = {
+  voice: ' You are speaking aloud: answer in 2 to 4 short, natural spoken sentences. No lists, no symbols, no markdown.',
   simple: ' Explain like the student is 12: very simple words, a friendly example, no jargon.',
   exam: ' Answer the way a top examiner would: key terms, mark-scheme style points and how many marks each part earns.',
   deep: ' Go deeper than the syllabus: explain why it works, link to related topics, and give one challenge question at the end.',
@@ -35,18 +36,33 @@ export async function POST(req: NextRequest) {
 
   let body: any
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Bad request.' }, { status: 400 }) }
-  const subject = SUBJECTS.includes(body.subject) ? body.subject : 'Mathematics'
+  const subject = SUBJECTS.includes(body.subject) ? body.subject : (str(body.subject, 60).replace(/[^\w &,'()/.+-]/g, '').trim() || 'Mathematics')
   const topic = str(body.topic, 120).replace(/[\r\n]+/g, ' ')
   const mode = body.mode as string
   const base = `You are Wise Owl, a warm, clear tutor for Cambridge IGCSE students at Wise Owl School Westgate in Harare, Zimbabwe. The subject is IGCSE ${subject}${topic ? ` on the topic "${topic}"` : ''}. Use plain language for a teenager. Only help with schoolwork.`
 
   let system = base, max = 900
-  let messages: { role: 'user' | 'assistant'; content: string }[] = []
+  let messages: { role: 'user' | 'assistant'; content: any }[] = []
   if (mode === 'chat') {
-    system += ' Keep answers short, show worked steps, and say how marks are earned in the exam.' + (STYLES[body.style] ?? '')
-    messages = (Array.isArray(body.messages) ? body.messages : []).slice(-8)
-      .map((m: any) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: str(m.content, 1500) }))
+    max = 2500
+    const general = subject === 'Anything' || subject === 'General'
+    system = `You are Wise Owl, the AI study companion of Wise Owl School Westgate in Harare, Zimbabwe. You are as capable as the best general AI assistants and the best private tutor combined: you can answer ANY question the student asks, on any topic, accurately and helpfully, including homework, essays, coding, maths, science, languages, careers, study skills and general knowledge.
+How you answer:
+- Give the real answer first, then explain. Think carefully; for maths and science show every step and check the result. Never invent facts, quotes, past-paper details or mark schemes; if you are not sure, say so plainly.
+- Match the depth to the question: short for simple things, thorough with headings, lists and worked examples for hard ones. Use Markdown (headings, bullets, tables, bold key terms). Write maths in plain text such as x^2 or 3/4.
+- ${general ? 'The student has not picked a subject, so infer it from the question.' : `The student's current subject is Cambridge IGCSE ${subject}${topic ? ` (topic: "${topic}")` : ''}. For this subject, teach to the Cambridge syllabus: use the correct command words and key terms, and show how marks are earned in the exam. Where a question is outside this subject, just answer it well.`}
+- End school-subject answers with one short check-your-understanding question or a next step. Do not do this for casual chat.
+- The student is a teenager: be warm, encouraging and honest, never condescending. Help them learn, not just copy: for graded homework, guide with the method and a worked similar example, then give the answer if they ask.
+- If an image is attached, read it carefully (handwriting, diagrams, graphs), say what you see, then solve or explain it step by step.
+- Politely decline anything harmful, sexual or dangerous, and gently point to a trusted adult for serious personal problems.` + (STYLES[body.style] ?? '')
+    messages = (Array.isArray(body.messages) ? body.messages : []).slice(-24)
+      .map((m: any) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: str(m.content, 6000) })) as any
     if (!messages.length || messages[messages.length - 1].role !== 'user') return NextResponse.json({ error: 'Ask a question first.' }, { status: 400 })
+    const img = body.image
+    if (img && typeof img.data === 'string' && /^image\/(jpeg|png|webp|gif)$/.test(img.type) && img.data.length < 6_000_000 && /^[A-Za-z0-9+/=]+$/.test(img.data)) {
+      const lastM: any = messages[messages.length - 1]
+      lastM.content = [{ type: 'image', source: { type: 'base64', media_type: img.type, data: img.data } }, { type: 'text', text: lastM.content || 'Please solve or explain the question in this photo, step by step.' }]
+    }
   } else if (mode === 'quiz') {
     max = 4000; const n = body.count === 10 ? 10 : 5, lv = LEVELS[body.difficulty] ?? LEVELS.medium
     messages = [{ role: 'user', content: `Write ${n} multiple-choice revision questions, difficulty: ${lv}. Return ONLY a JSON array of ${n} objects: {"q": string, "options": [4 short strings], "answer": index 0-3, "explain": one or two sentences}. Spread the correct answers across positions.` }]

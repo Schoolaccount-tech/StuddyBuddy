@@ -133,6 +133,7 @@ export function cleanForSpeech(t: string): string {
     .trim()
 }
 export function speak(t: string) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(cleanForSpeech(t).slice(0, 1200)); u.lang = 'en-GB'; speechSynthesis.speak(u) } catch {} }
+export function speakThen(t: string, done: () => void) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(cleanForSpeech(t).slice(0, 900)); u.lang = 'en-GB'; u.onend = done; u.onerror = done; speechSynthesis.speak(u) } catch { done() } }
 export function stopSpeak() { try { speechSynthesis.cancel() } catch {} }
 export const canListen = () => typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
 export function listen(onText: (t: string) => void, onEnd: () => void): (() => void) | null {
