@@ -71,6 +71,7 @@ export default function About() {
         <Person tone="b" initials="JN" name="Jayden Ngwenya" role="Code" emoji="💻" verified blurb="The builder. Jayden turned the ideas into a real website, with games, animations and tools that work on every screen." tags={['Website', 'Animations', 'Smartboard ready']} />
       </section>
 
+      <p className="center"><a className="btn ghost" href="/how-it-works">📖 How this site is built, step by step</a></p>
       <section className="solo-p">
         <Person tone="c" initials="EM" name="Emmanuel Makhubo" role="Motivation & morale" emoji="🔥" blurb="The team's cheerleader. Emmanuel kept spirits high and kept the energy going whenever the work got tough." tags={['Motivation', 'Morale', 'Team spirit']} />
       </section>

@@ -159,11 +159,11 @@ function RuleRow({ r, run }: { r: any; run: Run }) {
 
 function ReviewMod({ call }: { call: (fn: string, args?: object) => Promise<any> }) {
   const [rows, setRows] = useState<any[] | null>(null); const [err, setErr] = useState('')
-  const load = async () => { try { setRows(await call('lg_admin_reviews')) } catch (e: any) { setErr(e.message) } }
+  const load = async () => { try { setRows(await call('lg_admin_site_ratings')) } catch (e: any) { setErr(e.message) } }
   useEffect(() => { void load(); return undefined }, []) // eslint-disable-line
-  async function decide(student: string, d: 'approve' | 'hide') { try { const r = await call('lg_admin_review_decide', { p_student: student, p_decision: d, p_note: null }); if (r.ok === false) setErr(r.error); else await load() } catch (e: any) { setErr(e.message) } }
+  async function decide(device: string, d: 'approve' | 'hide') { try { const r = await call('lg_admin_site_rating_decide', { p_device: device, p_decision: d, p_note: null }); if (r.ok === false) setErr(r.error); else await load() } catch (e: any) { setErr(e.message) } }
   if (!rows) return <div>{err ? <div className="notice">{err}</div> : <div className="busy">Loading…</div>}</div>
-  return <div>{err && <div className="notice">{err}</div>}<p className="note">Reviews only show to everyone after you approve them. Hide anything unkind, rude or personal.</p>
-    {!rows.length ? <p className="note">No reviews yet.</p> : rows.map(r => <div key={r.student} className="lgevent"><div><b>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</b> · {r.who} <span className="note">({r.status})</span><div>{r.body}</div></div>
-      <div className="stack">{r.status !== 'approved' && <button className="btn" onClick={() => decide(r.student, 'approve')}>Approve</button>}{r.status !== 'hidden' && <button className="btn ghost" onClick={() => decide(r.student, 'hide')}>Hide</button>}</div></div>)}</div>
+  return <div>{err && <div className="notice">{err}</div>}<p className="note">Star ratings count straight away. A written comment only shows on the Reviews page after you approve it. Hide anything unkind, rude or personal.</p>
+    {!rows.length ? <p className="note">No comments yet.</p> : rows.map(r => <div key={r.device} className="lgevent"><div><b>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</b> · {r.who} <span className="note">({r.shown ? 'showing' : 'waiting'})</span><div>{r.body}</div></div>
+      <div className="stack">{!r.shown && <button className="btn" onClick={() => decide(r.device, 'approve')}>Approve</button>}{r.shown && <button className="btn ghost" onClick={() => decide(r.device, 'hide')}>Hide</button>}</div></div>)}</div>
 }

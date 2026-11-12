@@ -33,6 +33,7 @@ export default function Live({ code, staff, me }: Props) {
 }
 
 function Setup({ code, staff, onBack, onCreated }: { code?: string; staff?: string; onBack: () => void; onCreated: (pin: string) => void }) {
+  const [playToo, setPlayToo] = useState(true)
   const [title, setTitle] = useState(''); const [subject, setSubject] = useState(''); const [topic, setTopic] = useState(''); const [secs, setSecs] = useState(20)
   const [qs, setQs] = useState<Q[]>([]); const [paste, setPaste] = useState(''); const [err, setErr] = useState(''); const [gen, setGen] = useState(false); const [busy, setBusy] = useState(false)
   async function aiGen() {
@@ -44,7 +45,7 @@ function Setup({ code, staff, onBack, onCreated }: { code?: string; staff?: stri
   const set = (i: number, p: Partial<Q>) => setQs(qs.map((q, j) => j === i ? { ...q, ...p } : q))
   async function create() {
     setBusy(true); setErr('')
-    try { const r = await rpc('lg_game_create', { p_code: staff ? null : code, p_title: title, p_subject: subject, p_questions: qs, p_secs: secs }, staff); if (!r.ok) setErr(r.error); else { sfx('win'); onCreated(r.pin) } } catch (e: any) { setErr(e.message) }
+    try { const r = await rpc('lg_game_create', { p_code: staff ? null : code, p_title: title, p_subject: subject, p_questions: qs, p_secs: secs }, staff); if (!r.ok) setErr(r.error); else { if (!staff && playToo) { try { await rpc('lg_game_join', { p_pin: r.pin, p_code: code }) } catch {} } sfx('win'); onCreated(r.pin) } } catch (e: any) { setErr(e.message) }
     setBusy(false)
   }
   return <div className="lgform"><button className="linkish" onClick={onBack}>← Back</button><h3>Create a live game</h3>
@@ -52,6 +53,7 @@ function Setup({ code, staff, onBack, onCreated }: { code?: string; staff?: stri
     <label>Subject<input value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Biology" /></label>
     <label>Topic (for AI questions)<input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Photosynthesis" /></label>
     <label>Seconds per question<select value={secs} onChange={e => setSecs(Number(e.target.value))}>{[10, 15, 20, 30, 45, 60].map(s => <option key={s}>{s}</option>)}</select></label>
+    {!staff && <label className="switch"><input type="checkbox" checked={playToo} onChange={e => setPlayToo(e.target.checked)} /><span /> I want to play too (answer on my own screen)</label>}
     <div className="row" style={{ justifyContent: 'flex-start' }}><button className="btn ghost" onClick={aiGen} disabled={gen}>{gen ? 'Writing…' : '✨ Write 10 questions with AI'}</button><span className="note">Read them through before you start.</span></div>
     <details><summary>Paste questions (JSON)</summary><textarea rows={4} value={paste} onChange={e => setPaste(e.target.value)} placeholder='[{"q":"...","options":["a","b","c","d"],"answer":0}]' /><button className="btn ghost" onClick={imp}>Import</button></details>
     {qs.map((q, i) => <div key={i} className="q"><b>Question {i + 1}</b> <button className="linkish" onClick={() => setQs(qs.filter((_, j) => j !== i))}>remove</button>
@@ -63,70 +65,91 @@ function Setup({ code, staff, onBack, onCreated }: { code?: string; staff?: stri
     <button className="btn" onClick={create} disabled={busy || !qs.length || title.trim().length < 2}>{busy ? 'Creating…' : `Create game (${qs.length} questions)`}</button></div>
 }
 
+type Row = { who: string; score: number; correct: number; rank: number }
+const medal = (r: number) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r
+const Board = ({ rows }: { rows: Row[] }) => <div className="lgtable">{rows.map(r => <div key={r.who + r.rank} className={'lgrow r' + Math.min(r.rank, 4)}><b className="lgrank">{medal(r.rank)}</b><span className="lgname">{r.who}</span><b className="lgpts">{r.score}</b></div>)}</div>
+const Podium = ({ rows }: { rows: Row[] }) => <div className="podium">{[1, 0, 2].map(i => rows[i] && <div key={i} className={'pod p' + (i + 1)}><span className="pn">{rows[i].who}</span><span className="ps">{rows[i].score}</span><div className="pb">{['🥇', '🥈', '🥉'][i]}</div></div>)}</div>
+
+// The countdown owns its own fast clock so the rest of the screen only redraws when the game state really changes.
+function Timer({ secs, getLeft, onZero, show }: { secs: number; getLeft: () => number; onZero: () => void; show: 'bar' | 'text' }) {
+  const [l, setL] = useState(getLeft()); const fired = useRef(false)
+  useEffect(() => { fired.current = false; const id = setInterval(() => { const v = getLeft(); setL(v); if (v <= 0 && !fired.current) { fired.current = true; onZero() } }, 100); return () => clearInterval(id) }, [getLeft, onZero])
+  return show === 'bar' ? <div className="timerbar" aria-hidden><i style={{ width: `${(l / secs) * 100}%` }} /></div> : <span>{Math.ceil(l)}s</span>
+}
+
 function Game({ pin, host, code, staff, onExit }: { pin: string; host: boolean; code?: string; staff?: string; onExit: () => void }) {
-  const [s, setS] = useState<any>(null); const [err, setErr] = useState(''); const [now, setNow] = useState(0); const recv = useRef(0); const lastPhase = useRef(''); const auto = useRef(''); const [picked, setPicked] = useState(-1); const [busy, setBusy] = useState(false)
+  const [s, setS] = useState<any>(null); const [err, setErr] = useState(''); const [picked, setPicked] = useState(-1); const [busy, setBusy] = useState(false)
+  const leftRef = useRef(0); const recv = useRef(0); const last = useRef(''); const lastPhase = useRef(''); const auto = useRef(''); const polling = useRef(false)
   const bearer = host ? staff : undefined
+  const getLeft = useCallback(() => Math.max(0, leftRef.current - (Date.now() - recv.current) / 1000), [])
   const poll = useCallback(async () => {
-    try { const r = await rpc('lg_game_state', { p_pin: pin, p_code: code ?? null, p_host: host }, bearer); if (!r.ok) setErr(r.error); else { recv.current = Date.now(); setErr(''); setS(r) } } catch { /* keep trying */ }
+    if (polling.current) return; polling.current = true
+    try {
+      const r = await rpc('lg_game_state', { p_pin: pin, p_code: code ?? null, p_host: host }, bearer)
+      if (!r.ok) setErr(r.error); else {
+        leftRef.current = r.left; recv.current = Date.now(); setErr('')
+        const { left, ...rest } = r; const sig = JSON.stringify(rest)
+        if (sig !== last.current) { last.current = sig; setS(r) }
+      }
+    } catch { /* keep trying */ }
+    polling.current = false
   }, [pin, code, host, bearer])
-  useEffect(() => { void poll(); const id = setInterval(() => { if (!document.hidden) void poll() }, host ? 1000 : 1200); return () => clearInterval(id) }, [poll, host])
-  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 100); return () => clearInterval(id) }, [])
+  useEffect(() => { void poll(); const id = setInterval(() => { if (!document.hidden) void poll() }, host ? 800 : 1000); return () => clearInterval(id) }, [poll, host])
   const key = s ? s.phase + ':' + s.qidx : ''
+  const canAnswer = !!s?.me && (!host || !s?.hosted_by_staff)
   useEffect(() => {
     if (!s) return undefined
     if (key !== lastPhase.current) {
       if (s.phase === 'question') { setPicked(-1); sfx('pop') }
-      if (s.phase === 'reveal' && !host) sfx(s.me?.right ? 'good' : 'bad')
+      if (s.phase === 'reveal' && s.me) sfx(s.me.right ? 'good' : 'bad')
       if (s.phase === 'finished') { sfx('win'); confetti(host || (s.me && s.me.rank <= 3) ? 1.6 : 0.8) }
       lastPhase.current = key
     }
     return undefined
   }, [key]) // eslint-disable-line
-  async function act(a: string) { setBusy(true); try { const r = await rpc('lg_game_host', { p_pin: pin, p_code: code ?? null, p_action: a }, bearer); if (!r.ok) setErr(r.error); await poll() } catch (e: any) { setErr(e.message) } setBusy(false) }
-  // The host's screen moves to the answer reveal as soon as everyone has answered.
+  const act = useCallback(async (a: string) => { setBusy(true); try { const r = await rpc('lg_game_host', { p_pin: pin, p_code: code ?? null, p_action: a }, bearer); if (!r.ok) setErr(r.error); await poll() } catch (e: any) { setErr(e.message) } setBusy(false) }, [pin, code, bearer, poll])
+  // As soon as everyone has answered, the host's screen moves on to the answer reveal.
   useEffect(() => {
     if (host && s && s.phase === 'question' && s.players > 0 && s.answered >= s.players && auto.current !== key) { auto.current = key; void act('reveal') }
     return undefined
   }, [s]) // eslint-disable-line
+  const onZero = useCallback(() => { void poll() }, [poll])
   async function answer(i: number) {
     if (picked >= 0 || !s) return; setPicked(i); sfx('pop')
-    try { const r = await rpc('lg_game_answer', { p_pin: pin, p_code: code, p_choice: i }); if (!r.ok) setErr(r.error) } catch (e: any) { setErr(e.message) }
+    try { const r = await rpc('lg_game_answer', { p_pin: pin, p_code: code, p_choice: i }); if (!r.ok) setErr(r.error); void poll() } catch (e: any) { setErr(e.message) }
   }
+  async function joinSelf() { try { const r = await rpc('lg_game_join', { p_pin: pin, p_code: code }); if (!r.ok) setErr(r.error); await poll() } catch (e: any) { setErr(e.message) } }
   if (!s) return <div>{err ? <div className="notice">{err} <button className="linkish" onClick={onExit}>Leave</button></div> : <div className="busy">Connecting…</div>}</div>
-  const left = s.phase === 'question' ? Math.max(0, s.left - (now - recv.current) / 1000) : 0
-  const q = s.question
-  const Bar = <div className="timerbar" aria-hidden><i style={{ width: `${s.phase === 'question' ? (left / s.secs) * 100 : 0}%` }} /></div>
+  const q = s.question; const isQ = s.phase === 'question'; const board: Row[] = s.board
   const Head = <div className="gamehead"><b>{s.title}</b><span className="note">{s.qidx >= 0 && s.phase !== 'finished' ? `Question ${s.qidx + 1} of ${s.total}` : `${s.total} questions`} · {s.players} player{s.players === 1 ? '' : 's'}</span></div>
-  const Board = ({ rows }: { rows: any[] }) => <div className="lgtable">{rows.map((r, i) => <div key={i} className={'lgrow r' + Math.min(r.rank, 4)}><b className="lgrank">{r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank}</b><span className="lgname">{r.who}</span><b className="lgpts">{r.score}</b></div>)}</div>
-  const Podium = () => <div className="podium">{[1, 0, 2].map(i => s.board[i] && <div key={i} className={'pod p' + (i + 1)}><span className="pn">{s.board[i].who}</span><span className="ps">{s.board[i].score}</span><div className="pb">{['🥇', '🥈', '🥉'][i]}</div></div>)}</div>
 
-  if (s.phase === 'finished') return <div className="game">{Head}<h2 className="center">🏁 Game over!</h2><Podium />{s.board.length > 3 && <Board rows={s.board.slice(3)} />}
+  if (s.phase === 'finished') return <div className="game">{Head}<h2 className="center">🏁 Game over!</h2><Podium rows={board} />{board.length > 3 && <Board rows={board.slice(3)} />}
     {s.me && <div className="resultme"><b>You finished #{s.me.rank}</b> with {s.me.score} points · {s.me.correct_total} correct{s.counts ? (s.me.league_points > 0 ? <> · <b>+{s.me.league_points} league points</b> 🛡️</> : <span className="note"> · no league points this time (classmate-hosted games need 3 or more players)</span>) : ''}</div>}
     {host && s.counts && <p className="note">League points have been added for players.</p>}<div className="row"><button className="btn" onClick={onExit}>Done</button></div></div>
 
   if (s.phase === 'lobby') return <div className="game">{Head}
     <div className="bigpin"><small>Game PIN</small><b>{pin}</b></div>
-    <div className="pchips">{s.names.length ? s.names.map((n: string, i: number) => <span key={i} className="pchip">{n}</span>) : <span className="note">Waiting for players to join…</span>}</div>
-    {host ? <div className="row"><button className="btn" onClick={() => act('start')} disabled={busy || s.players < 1}>Start game ({s.players})</button><button className="btn ghost" onClick={() => { if (confirm('Cancel this game?')) act('end').then(onExit) }}>Cancel</button></div>
-      : <p className="center">You’re in{me_name(s)}! Watch the host’s screen. 👀</p>}{err && <div className="notice">{err}</div>}</div>
+    <div className="pchips">{s.names.length ? s.names.map((n: string, i: number) => <span key={n + i} className="pchip">{n}</span>) : <span className="note">Waiting for players to join…</span>}</div>
+    {host ? <div className="row"><button className="btn" onClick={() => act('start')} disabled={busy || s.players < 1}>Start game ({s.players})</button>
+        {!staff && !s.me && <button className="btn ghost" onClick={joinSelf}>Join as a player too</button>}
+        <button className="btn ghost" onClick={() => { if (confirm('Cancel this game?')) act('end').then(onExit) }}>Cancel</button></div>
+      : <p className="center">You’re in! Watch the host’s screen. 👀</p>}{err && <div className="notice">{err}</div>}</div>
 
-  const isQ = s.phase === 'question'
-  return <div className="game">{Head}{isQ && Bar}
+  const mine = (i: number) => canAnswer && (s.phase === 'reveal' ? s.me?.choice === i : picked === i)
+  return <div className="game">{Head}{isQ && <Timer secs={s.secs} getLeft={getLeft} onZero={onZero} show="bar" />}
     {q && <h2 className="gameq">{q.q}</h2>}
-    {isQ && host && <div className="center note">{s.answered} of {s.players} answered · {Math.ceil(left)}s</div>}
-    {isQ && !host && <div className="center note">{Math.ceil(left)}s</div>}
+    {isQ && <div className="center note">{host ? `${s.answered} of ${s.players} answered · ` : ''}<Timer secs={s.secs} getLeft={getLeft} onZero={onZero} show="text" /></div>}
     <div className="answers">{q && q.options.map((o: string, i: number) => {
-      const rev = s.phase === 'reveal'; const right = rev && q.answer === i; const mine = !host && (rev ? s.me?.choice === i : picked === i)
-      return <button key={i} disabled={host || !isQ || picked >= 0} onClick={() => answer(i)} className={'ans a' + i + (right ? ' right' : rev ? ' dim' : '') + (mine ? ' mine' : '')} aria-label={`Answer ${i + 1}: ${o}`}>
+      const rev = s.phase === 'reveal'; const right = rev && q.answer === i
+      return <button key={i} disabled={!canAnswer || !isQ || picked >= 0 || !!s.me?.answered} onClick={() => answer(i)} className={'ans a' + i + (right ? ' right' : rev ? ' dim' : '') + (mine(i) ? ' mine' : '')} aria-label={`Answer ${i + 1}: ${o}`}>
         <span className="shape">{SHAPES[i]}</span><span className="at">{o}</span>{rev && <span className="cnt">{q.dist[i]}</span>}{right && <span className="tick">✓</span>}</button>
     })}</div>
-    {!host && isQ && picked >= 0 && <p className="center">Locked in! Waiting for the others…</p>}
-    {!host && s.phase === 'reveal' && <div className={'resultme ' + (s.me?.right ? 'ok' : 'no')}>{s.me?.answered ? (s.me.right ? <>✅ Correct! <b>+{s.me.points}</b></> : '❌ Not this time') : '⏱️ No answer'} · You are #{s.me?.rank} with {s.me?.score}</div>}
+    {canAnswer && isQ && (picked >= 0 || s.me?.answered) && <p className="center">Locked in! Waiting for the others…</p>}
+    {canAnswer && s.phase === 'reveal' && <div className={'resultme ' + (s.me?.right ? 'ok' : 'no')}>{s.me?.answered ? (s.me.right ? <>✅ Correct! <b>+{s.me.points}</b></> : '❌ Not this time') : '⏱️ No answer'} · You are #{s.me?.rank} with {s.me?.score}</div>}
     {s.phase === 'reveal' && q?.explain && <p className="why"><b>Why:</b> {q.explain}</p>}
-    {s.phase === 'reveal' && <Board rows={s.board.slice(0, 5)} />}
+    {s.phase === 'reveal' && <Board rows={board.slice(0, 5)} />}
     {host && <div className="row">{isQ ? <button className="btn ghost" onClick={() => act('reveal')} disabled={busy}>Show answer now</button> :
       <button className="btn" onClick={() => act('next')} disabled={busy}>{s.qidx + 1 >= s.total ? 'Finish & show podium' : 'Next question →'}</button>}
       <button className="linkish" onClick={() => { if (confirm('End the game now?')) act('end') }}>End game</button></div>}
     {err && <div className="notice">{err}</div>}</div>
 }
-const me_name = (_: any) => ''

@@ -164,6 +164,7 @@ export default function Home() {
     { id: 'bd', e: '📺', label: board ? 'Big screen mode: turn off' : 'Big screen mode (smartboard)', hint: 'smartboard projector large', run: toggleBoard },
     { id: 'fs', e: '🖥️', label: 'Toggle fullscreen', run: fullscreen },
     { id: 'rb', e: '🌈', label: 'Rainbow mode', hint: 'party', run: rainbow },
+    { id: 'hiw', e: '📖', label: 'How this site works (guide)', hint: 'learn', run: () => { window.location.href = '/how-it-works' } },
     { id: 'br', e: '🌬️', label: 'Breathe (calm down)', hint: 'lab relax', run: () => changeTab('lab') },
     { id: 'share', e: '📱', label: 'Share / QR code', hint: 'qr join phone link', run: () => setShare(true) },
     { id: 'remind', e: '💧', label: cfg.remind ? 'Break reminders: turn off' : 'Break reminders: turn on', hint: 'water stretch', run: () => { setCfg({ remind: !cfg.remind }); say(cfg.remind ? 'Reminders off' : 'I will remind you to take breaks 💧', 'cheer', 3000) } },
