@@ -69,6 +69,18 @@ How you answer:
   } else if (mode === 'cards') {
     max = 2000
     messages = [{ role: 'user', content: 'Write 8 revision flashcards. Return ONLY a JSON array of 8 objects: {"front": short question or term, "back": clear answer under 30 words}.' }]
+  } else if (mode === 'deck') {
+    // Magic Import: turn the student's own notes, a photo of a page, or just a topic into a flashcard deck.
+    max = 7000
+    const n = [10, 20, 30].includes(body.count) ? body.count : 20
+    const src = str(body.text, 14000).trim(), img = body.image
+    const okImg = img && typeof img.data === 'string' && /^image\/(jpeg|png|webp|gif)$/.test(img.type) && img.data.length < 6_000_000 && /^[A-Za-z0-9+/=]+$/.test(img.data)
+    if (!src && !okImg && !topic) return NextResponse.json({ error: 'Add some notes, a photo or a topic first.' }, { status: 400 })
+    system = base + ' You turn study material into excellent flashcards. Rules: use ONLY facts from the material given (never invent facts); if only a topic is given, use the Cambridge IGCSE syllabus. One idea per card. The front is a short question or key term, the back a clear answer under 30 words. Cover the whole material, skip trivia, no duplicates.'
+    const parts: any[] = []
+    if (okImg) parts.push({ type: 'image', source: { type: 'base64', media_type: img.type, data: img.data } })
+    parts.push({ type: 'text', text: `${src ? `Study material:\n\"\"\"${src}\"\"\"\n\n` : okImg ? 'The study material is in the attached photo (read it carefully).\n\n' : `Topic: ${topic}\n\n`}Make up to ${n} flashcards. Return ONLY JSON: {"title": a short deck name (max 6 words), "cards": [{"front": string, "back": string}]}.` })
+    messages = [{ role: 'user', content: parts }]
   } else if (mode === 'exam') {
     max = 1200
     messages = [{ role: 'user', content: `Write ONE exam-style question worth 3 to 6 marks. Return ONLY JSON: {"question": string, "topic": specific syllabus topic in 2 to 5 words, "marks": number, "scheme": [one short marking point per mark], "hint": one short hint}. Seed: ${str(body.seed, 20)}` }]
@@ -120,6 +132,11 @@ How you answer:
       if (mode === 'mark') {
         const m = body.__marks as number
         return NextResponse.json({ data: { awarded: Math.max(0, Math.min(m, Math.round(Number(o.awarded) || 0))), marks: m, feedback: str(o.feedback, 500) } })
+      }
+      if (mode === 'deck') {
+        const cards = (Array.isArray(o.cards) ? o.cards : []).filter((c: any) => c && c.front && c.back).slice(0, 30).map((c: any) => ({ front: str(c.front, 200), back: str(c.back, 300) }))
+        if (!cards.length) throw new Error('bad')
+        return NextResponse.json({ data: { title: str(o.title, 60) || 'My deck', cards } })
       }
       if (mode === 'sheet') {
         const sections = (Array.isArray(o.sections) ? o.sections : []).slice(0, 7).map((s: any) => ({ h: str(s.h, 80), points: (Array.isArray(s.points) ? s.points : []).slice(0, 6).map((x: any) => str(x, 200)) }))
