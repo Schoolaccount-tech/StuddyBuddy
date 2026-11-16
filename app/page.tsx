@@ -13,6 +13,7 @@ import Ask from '@/components/Ask'
 import Quiz from '@/components/Quiz'
 import Decks from '@/components/Decks'
 import NestTab from '@/components/Nest'
+import { buddyBonus } from '@/lib/owls'
 import Cards from '@/components/Cards'
 import Exam from '@/components/Exam'
 import Focus from '@/components/Focus'
@@ -120,7 +121,9 @@ export default function Home() {
         if (units > 0) void reportPractice(ev.k, units, ev.k === 'quiz' ? ev.subject : subj, `${ev.k}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`).then(n => { if (n && n > 0) toast('🛡️', `+${n} league points`, 'For you and your house') }).catch(() => {})
       }
     } catch {}
-    const r = apply(pRef.current, ev); pRef.current = r.p; setP(r.p); save(r.p)
+    const r = apply(pRef.current, ev); const bb = buddyBonus(ev, r.xp)
+    if (bb) { if (bb.xp) r.p.xp += bb.xp; if (bb.coins) { try { const rw = JSON.parse(localStorage.getItem('wob:rw') || '{}'); rw.spent = (rw.spent || 0) - bb.coins; localStorage.setItem('wob:rw', JSON.stringify(rw)) } catch {} } setTimeout(() => toast('🦉', `${bb.who}: ${[bb.xp ? '+' + bb.xp + ' bonus XP' : '', bb.coins ? '+' + bb.coins + ' 🪙' : ''].filter(Boolean).join(' and ')}`), 500) }
+    pRef.current = r.p; setP(r.p); save(r.p)
     if (r.xp > 0) floatXP(r.xp)
     if (r.xp >= 5 && ev.k !== 'bonus') toast('✨', `+${r.xp} XP`)
     r.questsDone.forEach((q, i) => setTimeout(() => { toast('🎯', 'Quest complete!', `${q.t} · +${q.xp} XP`, true); sfx('good') }, 400 + i * 700))
@@ -140,6 +143,7 @@ export default function Home() {
   function crestClick() { setSpin(true); setTimeout(() => setSpin(false), 900); sfx('pop'); crestN.current++; if (crestN.current >= 5) { crestN.current = 0; rainbow() } }
   function floatXP(n: number) { try { const el = document.querySelector('.xp'); if (!el) return; const r = el.getBoundingClientRect(), d = document.createElement('div'); d.className = 'xpfloat'; d.textContent = `+${n} XP`; d.style.left = r.left + r.width / 2 + 'px'; d.style.top = r.bottom + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1500) } catch {} }
   function toggleSound() { setSnd(s => { setSound(!s); if (!s) sfx('pop'); return !s }) }
+  useEffect(() => { try { const q = new URLSearchParams(location.search).get('live'); if (q && /^\d{6}$/.test(q)) { sessionStorage.setItem('wob:livepin', q); setTab('league'); history.replaceState(null, '', location.pathname) } } catch {} return undefined }, [])
   function changeTab(t: Tab) { prevTab.current = TABS.findIndex(x => x[0] === tab); setTab(t); sfx('pop'); if (t !== 'focus') noise(false); if (cfgRef.current.party) confetti(0.5) }
   function cycleMode() { const n = mode === 'auto' ? 'dark' : mode === 'dark' ? 'light' : 'auto'; setMode(n); store.set('mode', n); if (n === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = n }
 

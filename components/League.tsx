@@ -122,6 +122,8 @@ function Me({ me, code, refresh, signOut }: { me: any; code: string; refresh: ()
 export default function League({ api }: { api: Api }) {
   const [view, setView] = useState<View>('home'); const [period, setPeriod] = useState('season'); const [subject, setSubject] = useState('')
   const [code, setCodeS] = useState(''); const [me, setMe] = useState<any>(null); const [tick, setTick] = useState(0)
+  // An invite link (?live=123456) opens the Live quiz section with the code ready to join.
+  useEffect(() => { try { if (/^\d{6}$/.test(sessionStorage.getItem('wob:livepin') || '')) setView('live') } catch {} return undefined }, [])
   async function signIn(c: string, remember: boolean): Promise<string> {
     try { const r = await rpc('lg_me', { p_code: c }); if (!r.ok) return r.error; setCode(c, remember); setCodeS(c); setMe(r); sfx('good'); return '' } catch (e: any) { return e.message }
   }

@@ -4,32 +4,9 @@ import { store } from '@/lib/api'
 import { dayKey, GOAL } from '@/lib/progress'
 import { sfx, confetti } from '@/lib/fx'
 import type { Api } from './api'
+import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, type Sp, type Nest, type Fx } from '@/lib/owls'
 
 // Owl Nest: hatch eggs by studying (or buy them with coins) and collect owls of five rarities.
-type Sp = { id: string; name: string; r: number; body: string; belly: string; eye: string; acc: string[]; fact: string }
-export const RARITY = [['Common', '#8b95a7'], ['Uncommon', '#3fb950'], ['Rare', '#3b82f6'], ['Epic', '#a855f7'], ['Legendary', '#f5b301']] as const
-export const OWLS: Sp[] = [
-  { id: 'barn', name: 'Barn Owl', r: 0, body: '#d9a35f', belly: '#fff1dc', eye: '#2b2b2b', acc: ['spots'], fact: 'Its heart-shaped face funnels sound to its ears, so it can hear a mouse under snow.' },
-  { id: 'tawny', name: 'Tawny Owl', r: 0, body: '#9b6b43', belly: '#e8d3b5', eye: '#3a2a1a', acc: [], fact: 'The classic “twit-twoo” is actually two owls calling to each other.' },
-  { id: 'pearl', name: 'Pearl-spotted Owlet', r: 0, body: '#8a7358', belly: '#f1e9da', eye: '#facc15', acc: ['spots'], fact: 'A tiny owl found in Zimbabwe that hunts in daylight. It has fake “eyes” on the back of its head.' },
-  { id: 'little', name: 'Little Owl', r: 0, body: '#b08968', belly: '#f3e5d0', eye: '#f5d142', acc: [], fact: 'Only about 22 cm tall, and famous for its stern, frowning look.' },
-  { id: 'scops', name: 'African Scops Owl', r: 0, body: '#8d8d86', belly: '#dcdcd4', eye: '#fcd34d', acc: ['tufts'], fact: 'Sleeps pressed against a branch and looks exactly like a piece of bark.' },
-  { id: 'verr', name: "Verreaux's Eagle-Owl", r: 1, body: '#7d8590', belly: '#d5d9de', eye: '#3b2f2f', acc: ['tufts', 'lids'], fact: 'Africa’s giant “milky” owl, with pink eyelids. Seen in Zimbabwe’s bushveld.' },
-  { id: 'long', name: 'Long-eared Owl', r: 1, body: '#c28a4a', belly: '#f0d9b0', eye: '#f97316', acc: ['tufts'], fact: 'Its “ears” are just feathers. Its real ears are hidden on the sides of its head.' },
-  { id: 'burrow', name: 'Burrowing Owl', r: 1, body: '#c9a66b', belly: '#fffaf0', eye: '#facc15', acc: ['spots'], fact: 'Lives in holes in the ground and bobs its head when it is curious.' },
-  { id: 'spotted', name: 'Spotted Owl', r: 1, body: '#6e5a47', belly: '#e9dcc8', eye: '#1f1a14', acc: ['spots'], fact: 'Needs old, quiet forests and can live for over 15 years.' },
-  { id: 'wood', name: 'African Wood Owl', r: 1, body: '#a0522d', belly: '#f0d9b5', eye: '#2a1a0f', acc: [], fact: 'Its hooting duets at dusk sound like people laughing in the forest.' },
-  { id: 'snowy', name: 'Snowy Owl', r: 2, body: '#f4f7fb', belly: '#ffffff', eye: '#fbbf24', acc: ['spots', 'snow'], fact: 'Flies silently over the Arctic and can see a lemming from far away.' },
-  { id: 'grey', name: 'Great Grey Owl', r: 2, body: '#8e98a3', belly: '#d6dbe0', eye: '#fde047', acc: ['rings'], fact: 'Huge face discs act like satellite dishes. It can hear prey under 30 cm of snow.' },
-  { id: 'pel', name: "Pel's Fishing Owl", r: 2, body: '#d17b32', belly: '#f2c88f', eye: '#111827', acc: ['lids'], fact: 'A rare giant orange owl that catches fish along African rivers at night.' },
-  { id: 'elf', name: 'Elf Owl', r: 2, body: '#b5a48a', belly: '#efe6d6', eye: '#fde047', acc: ['cap'], fact: 'The smallest owl in the world, no bigger than a sparrow.' },
-  { id: 'galaxy', name: 'Galaxy Owl', r: 3, body: '#2b2a6b', belly: '#5b4fd1', eye: '#ffe66d', acc: ['stars'], fact: 'Hoots in the night and a new star appears in its feathers every time it learns something.' },
-  { id: 'storm', name: 'Storm Owl', r: 3, body: '#3b4a63', belly: '#8aa4c8', eye: '#7dd3fc', acc: ['bolt'], fact: 'Rides thunderclouds. Its wingbeats sound like distant thunder.' },
-  { id: 'ember', name: 'Ember Owl', r: 3, body: '#c2410c', belly: '#fdba74', eye: '#fde047', acc: ['flame'], fact: 'Warms a whole classroom just by sitting on a desk. Loves exam season.' },
-  { id: 'frost', name: 'Frost Owl', r: 3, body: '#7dd3fc', belly: '#e0f7ff', eye: '#1e3a8a', acc: ['snow'], fact: 'Keeps a calm, cool head even when the test is hard.' },
-  { id: 'gold', name: 'Golden Scholar', r: 4, body: '#f5b301', belly: '#fff3b0', eye: '#7c2d12', acc: ['cap', 'halo', 'tufts'], fact: 'Graduated top of every class in the forest. Only the most dedicated students hatch this one.' },
-  { id: 'cosmic', name: 'Cosmic Professor', r: 4, body: '#1a1040', belly: '#7c3aed', eye: '#f0abfc', acc: ['glasses', 'stars', 'halo'], fact: 'Has read every book in the universe, twice. Knows the answer before you ask.' },
-]
 type Tier = { id: string; name: string; cost: number; need: number; odds: number[]; c1: string; c2: string; mark: string; blurb: string }
 const TIERS: Tier[] = [
   { id: 'study', name: 'Study Egg', cost: 0, need: 120, odds: [70, 22, 7, 1, 0], c1: '#fff7e0', c2: '#86d19a', mark: 'dots', blurb: 'Free. Warms up as you earn XP.' },
@@ -37,9 +14,6 @@ const TIERS: Tier[] = [
   { id: 'moon', name: 'Moon Egg', cost: 40, need: 0, odds: [0, 50, 38, 11, 1], c1: '#ede9fe', c2: '#8b5cf6', mark: 'stars', blurb: 'No commons. Good odds at rare and epic.' },
   { id: 'gold', name: 'Golden Egg', cost: 90, need: 0, odds: [0, 0, 55, 35, 10], c1: '#fff3b0', c2: '#f5b301', mark: 'stars', blurb: 'Rare or better every time. Legendary chance!' },
 ]
-type Nest = { owls: Record<string, number>; egg: { start: number } | null; buddy: string; hatched: number; pity: number }
-const DEF: Nest = { owls: {}, egg: null, buddy: '', hatched: 0, pity: 0 }
-const REFUND = [3, 6, 12, 25, 60]
 
 export function OwlArt({ sp, size = 96, still }: { sp: Sp | null; size?: number; still?: boolean }) {
   const a = sp?.acc ?? ['tufts'], body = sp ? sp.body : '#2a2f55', belly = sp ? sp.belly : '#3a4070', eye = sp?.eye ?? '#555'
@@ -78,29 +52,37 @@ function EggArt({ t, size = 90, crack = 0, wobble }: { t: Tier; size?: number; c
   </svg>
 }
 
-function pickOwl(odds: number[], pity: number): Sp {
-  let w = odds.slice()
-  if (pity >= 9 && w[0] + w[1] > 0) w = [0, 0, Math.max(w[2], 60), Math.max(w[3], 30), Math.max(w[4], 10)]
-  let x = Math.random() * w.reduce((a, b) => a + b, 0), r = 0
-  for (; r < w.length - 1; r++) { if (x < w[r]) break; x -= w[r] }
-  while (w[r] === 0 && r < w.length - 1) r++
+const REFUND = [3, 6, 12, 25, 60]
+const SAYS = ['Hoo hoo! 💛', 'That tickles! 🪶', 'Best study buddy ever!', 'Let us learn something new!', '*happy owl noises*', 'You are doing great!']
+function rollRarity(w: number[]) { let x = Math.random() * w.reduce((a, b) => a + b, 0), r = 0; for (; r < w.length - 1; r++) { if (x < w[r]) break; x -= w[r] } while (w[r] === 0 && r < w.length - 1) r++; return r }
+function pickOwl(odds: number[], pity: number, luck: number): Sp {
+  let w = odds.slice(); if (pity >= 9 && w[0] + w[1] > 0) w = [0, 0, Math.max(w[2], 60), Math.max(w[3], 30), Math.max(w[4], 10)]
+  let r = rollRarity(w); if (luck > 0 && Math.random() * 100 < luck) r = Math.max(r, rollRarity(w))
   const pool = OWLS.filter(o => o.r === r); return pool[Math.floor(Math.random() * pool.length)]
 }
+const mood = (n: Nest, id: string) => { const p = n.pets[id]; if (!p) return ['😐', 'New friend']; const t = today(); if (p.petDay === t || p.feedDay === t) return ['😊', 'Happy']; return ['🥱', 'Sleepy: give it some love'] }
 
 export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => void }) {
-  const [n, setN] = useState<Nest>(DEF); const [ready, setReady] = useState(false); const [spent, setSpent] = useState(0)
+  const [n, setN] = useState<Nest>(NEST_DEF); const [ready, setReady] = useState(false); const [spent, setSpent] = useState(0)
   const [hatch, setHatch] = useState<null | { t: Tier; sp: Sp; dup: boolean; stars: number; refund: number }>(null); const [stage, setStage] = useState(0); const [sel, setSel] = useState<Sp | null>(null)
+  const [say, setSay] = useState(''); const [hearts, setHearts] = useState(0); const [rename, setRename] = useState('')
   const timers = useRef<number[]>([])
-  useEffect(() => { setN({ ...DEF, ...store.get<Nest>('nest', DEF) }); setSpent(store.get<any>('rw', { spent: 0 }).spent || 0); setReady(true); return () => timers.current.forEach(clearTimeout) }, [])
-  const save = (m: Nest) => { setN(m); store.set('nest', m) }
+  useEffect(() => { setN(loadNest()); setSpent(store.get<any>('rw', { spent: 0 }).spent || 0); setReady(true); return () => timers.current.forEach(clearTimeout) }, [])
+  const save = (m: Nest) => { setN(m); saveNest(m) }
   const pay = (c: number) => { const rw = store.get<any>('rw', { spent: 0, owned: ['a-owl', 't-new'], avatar: 'a-owl', title: 't-new', frame: '' }); rw.spent = (rw.spent || 0) + c; store.set('rw', rw); setSpent(rw.spent) }
   const coins = Math.max(0, Math.floor(api.p.xp / 5) - spent)
-  const warm = n.egg ? Math.max(0, api.p.xp - n.egg.start) : 0, need = TIERS[0].need, pct = Math.min(100, Math.round((warm / need) * 100)), ready2 = !!n.egg && warm >= need
-  const found = OWLS.filter(o => n.owls[o.id]).length; const buddy = OWLS.find(o => o.id === n.buddy) || OWLS.find(o => n.owls[o.id]) || null
+  const buddy = buddyOf(n), bp = buddy ? power(n, buddy.id) : 1
+  const eff = (k: Fx['k']) => buddy ? buddy.ab.fx.filter(f => f.k === k) : []
+  const sumPct = (k: 'warm' | 'luck' | 'discount') => eff(k).reduce((a, f: any) => a + f.pct * bp, 0)
+  const need = Math.round(TIERS[0].need * (1 - Math.min(60, sumPct('warm')) / 100)), disc = Math.min(40, sumPct('discount'))
+  const cost = (t: Tier) => Math.max(1, Math.ceil(t.cost * (1 - disc / 100)))
+  const gift = eff('gift').reduce((a, f: any) => a + Math.round(f.coins * bp), 0); const giftReady = gift > 0 && n.gift !== today()
+  const warm = n.egg ? Math.max(0, api.p.xp - n.egg.start) : 0, pct = Math.min(100, Math.round((warm / need) * 100)), ready2 = !!n.egg && warm >= need
+  const found = OWLS.filter(o => n.owls[o.id]).length
   const goalN = api.p.goal.d === dayKey() ? Math.min(GOAL, api.p.goal.n) : 0
 
   function doHatch(t: Tier, base: Nest) {
-    const sp = pickOwl(t.odds, base.pity), had = base.owls[sp.id] || 0, refund = had ? REFUND[sp.r] : 0
+    const sp = pickOwl(t.odds, base.pity, Math.min(70, sumPct('luck'))), had = base.owls[sp.id] || 0, refund = had ? REFUND[sp.r] : 0
     if (refund) pay(-refund)
     save({ ...base, owls: { ...base.owls, [sp.id]: had + 1 }, hatched: base.hatched + 1, pity: sp.r >= 2 ? 0 : base.pity + 1, buddy: base.buddy || sp.id })
     setHatch({ t, sp, dup: !!had, stars: had + 1, refund }); setStage(0); sfx('pop')
@@ -109,17 +91,27 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     at(2800, () => { setStage(3); sfx(sp.r >= 3 ? 'level' : 'win'); confetti(sp.r >= 4 ? 2 : sp.r >= 2 ? 1.2 : 0.6) })
   }
   function buy(t: Tier) {
-    if (coins < t.cost) { api.toast('🪙', 'Not enough coins yet', `You need ${t.cost - coins} more. Study to earn XP, and 5 XP = 1 coin.`); sfx('bad'); return }
-    pay(t.cost); doHatch(t, n)
+    const c = cost(t)
+    if (coins < c) { api.toast('🪙', 'Not enough coins yet', `You need ${c - coins} more. Study to earn XP, and 5 XP = 1 coin.`); sfx('bad'); return }
+    pay(c); doHatch(t, n)
+  }
+  function claim() { pay(-gift); save({ ...n, gift: today() }); sfx('win'); confetti(0.5); api.toast('🎁', `${buddy ? petName(n, buddy) : 'Your owl'} brought ${gift} coins!`, buddy?.ab.name) }
+  function care(s: Sp, kind: 'pet' | 'feed') {
+    const t = today(), p = n.pets[s.id] || { name: '', bond: 0, petDay: '', feedDay: '' }
+    if (kind === 'pet' ? p.petDay === t : p.feedDay === t) return
+    if (kind === 'feed') { if (coins < 2) { api.toast('🪙', 'A treat costs 2 coins', 'Study to earn more.'); sfx('bad'); return } pay(2) }
+    save({ ...n, pets: { ...n.pets, [s.id]: { ...p, bond: Math.min(10, p.bond + 1), petDay: kind === 'pet' ? t : p.petDay, feedDay: kind === 'feed' ? t : p.feedDay } } })
+    setSay(kind === 'feed' ? 'Yum! Thank you! 🍖' : SAYS[Math.floor(Math.random() * SAYS.length)]); setHearts(h => h + 1); sfx('good'); setTimeout(() => setSay(''), 2500)
   }
   function start() { save({ ...n, egg: { start: api.p.xp } }); sfx('good') }
   function close() { timers.current.forEach(clearTimeout); timers.current = []; setHatch(null) }
-  function study() { doHatch(TIERS[0], { ...n, egg: null }) }
   if (!ready) return <section className="ow" />
   const sk = (s: Sp) => n.owls[s.id]
+  const abil = (s: Sp, p: number) => s.ab.fx.map((f, i) => <li key={i}>{describe(f, p)}</li>)
   return <section className="ow">
     <div className="ow-hero"><div className="ow-hb">{buddy ? <OwlArt sp={buddy} size={104} /> : <EggArt t={TIERS[0]} size={86} wobble />}</div>
-      <div><h2>🥚 Owl Nest</h2>{buddy ? <p>Your buddy is <b>{buddy.name}</b>. {goalN >= GOAL ? 'Daily goal done. Hoot hoot! 🎉' : `Study ${GOAL - goalN} more thing${GOAL - goalN === 1 ? '' : 's'} today to reach your daily goal.`}</p> : <p>Hatch your first owl! Study to warm your free egg, or spend coins on a special egg.</p>}
+      <div><h2>🥚 Owl Nest</h2>{buddy ? <><p><b>{petName(n, buddy)}</b> is your study buddy. {goalN >= GOAL ? 'Daily goal done. Hoot hoot! 🎉' : `Study ${GOAL - goalN} more thing${GOAL - goalN === 1 ? '' : 's'} today to reach your daily goal.`}</p>
+        <p className="ow-ab">⚡ <b>{buddy.ab.name}</b>: {buddy.ab.fx.map(f => describe(f, bp)).join(' · ')}</p>{giftReady && <button className="ow-btn pulse sm" onClick={claim}>🎁 Collect today’s {gift} coins</button>}</> : <p>Hatch your first owl! Study to warm your free egg, or spend coins on a special egg.</p>}
         <div className="ow-chips"><span>🪙 <b>{coins}</b> coins</span><span>🦉 <b>{found}</b>/{OWLS.length} owls</span><span>🥚 <b>{n.hatched}</b> hatched</span></div></div></div>
 
     <h3 className="ow-h">🔥 Incubator</h3>
@@ -127,27 +119,36 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
       : <><EggArt t={TIERS[0]} size={80} wobble={ready2} /><div className="ow-grow"><b>{ready2 ? 'Your egg is ready to hatch!' : 'Your egg is warming up…'}</b>
         <div className="ow-bar" aria-label={`Egg warmth ${pct}%`}><i style={{ width: pct + '%' }} /></div><small>{Math.min(warm, need)} / {need} XP</small>
         {!ready2 && <div className="ow-row"><button className="ow-btn ghost sm" onClick={() => onGo('quiz')}>🧠 Quiz</button><button className="ow-btn ghost sm" onClick={() => onGo('decks')}>📚 Decks</button><button className="ow-btn ghost sm" onClick={() => onGo('exam')}>📝 Exam</button></div>}</div>
-        {ready2 && <button className="ow-btn pulse" onClick={study}>🐣 Hatch!</button>}</>}</div>
+        {ready2 && <button className="ow-btn pulse" onClick={() => doHatch(TIERS[0], { ...n, egg: null })}>🐣 Hatch!</button>}</>}</div>
 
     <h3 className="ow-h">🛒 Egg shop</h3>
     <div className="ow-shop">{TIERS.slice(1).map(t => <div key={t.id} className="ow-egg-card">
       <EggArt t={t} size={70} /><b>{t.name}</b><small>{t.blurb}</small>
       <div className="ow-odds" aria-label="Odds">{RARITY.map(([nm, c], i) => t.odds[i] > 0 && <span key={nm} style={{ background: c }} title={`${nm} ${t.odds[i]}%`}>{t.odds[i]}%</span>)}</div>
-      <button className="ow-btn" onClick={() => buy(t)} disabled={coins < t.cost}>🪙 {t.cost} · Hatch</button></div>)}</div>
-    <p className="ow-note">Colours show the chance of each rarity. {RARITY.map(([nm, c]) => <span key={nm} className="ow-dot" style={{ background: c }}>{nm}</span>)} Bad luck protection: after 9 hatches without a Rare, the next one is guaranteed Rare or better. A duplicate owl levels up and gives coins back.</p>
+      <button className="ow-btn" onClick={() => buy(t)} disabled={coins < cost(t)}>🪙 {cost(t)}{cost(t) < t.cost && <s> {t.cost}</s>} · Hatch</button></div>)}</div>
+    <p className="ow-note">Colours show the chance of each rarity. {RARITY.map(([nm]) => <span key={nm} className="ow-dot">{nm}</span>)} Bad luck protection: after 9 hatches without a Rare, the next one is guaranteed Rare or better. A duplicate levels your owl up (stronger ability) and gives coins back.</p>
 
     <h3 className="ow-h">📖 Owldex <small>({found}/{OWLS.length})</small></h3>
-    <div className="ow-dex">{OWLS.map((s, i) => { const k = sk(s); return <button key={s.id} className={'ow-slot' + (k ? ' got' : '') + (buddy?.id === s.id ? ' buddy' : '')} style={{ ['--rc' as any]: RARITY[s.r][1], animationDelay: i * 25 + 'ms' }} onClick={() => k && setSel(s)} aria-label={k ? s.name : 'Undiscovered owl'}>
-      <OwlArt sp={k ? s : null} size={64} still /><span className="ow-nm">{k ? s.name : '???'}</span><span className="ow-rar" style={{ color: RARITY[s.r][1] }}>{RARITY[s.r][0]}</span>{k > 1 && <span className="ow-lv">★{Math.min(k, 6)}</span>}</button> })}</div>
+    <div className="ow-dex">{OWLS.map((s, i) => { const k = sk(s); return <button key={s.id} className={'ow-slot' + (k ? ' got' : '') + (buddy?.id === s.id ? ' buddy' : '')} style={{ ['--rc' as any]: RARITY[s.r][1], animationDelay: i * 25 + 'ms' }} onClick={() => { if (k) { setSel(s); setRename(n.pets[s.id]?.name || '') } }} aria-label={k ? s.name : 'Undiscovered owl'}>
+      <OwlArt sp={k ? s : null} size={64} still /><span className="ow-nm">{k ? petName(n, s) : '???'}</span><span className="ow-rar" style={{ color: RARITY[s.r][1] }}>{RARITY[s.r][0]}</span>{k > 1 && <span className="ow-lv">★{Math.min(k, 6)}</span>}</button> })}</div>
 
     {sel && <div className="ow-ov" onClick={() => setSel(null)}><div className="ow-modal" role="dialog" aria-modal="true" aria-label={sel.name} onClick={e => e.stopPropagation()} style={{ ['--rc' as any]: RARITY[sel.r][1] }}>
-      <OwlArt sp={sel} size={150} /><h3>{sel.name}</h3><span className="ow-tag" style={{ background: RARITY[sel.r][1] }}>{RARITY[sel.r][0]}</span>{n.owls[sel.id] > 1 && <p className="ow-note">Level ★{Math.min(n.owls[sel.id], 6)} · found {n.owls[sel.id]} times</p>}
+      <div className="ow-pet" key={hearts}><OwlArt sp={sel} size={140} />{hearts > 0 && <span className="ow-hearts" aria-hidden>💗💛💗</span>}</div>
+      {say && <div className="ow-say" role="status">{say}</div>}
+      <h3>{petName(n, sel)}</h3><span className="ow-tag" style={{ background: RARITY[sel.r][1] }}>{RARITY[sel.r][0]} · {sel.name}</span>
+      <p className="ow-note">{mood(n, sel.id)[0]} {mood(n, sel.id)[1]} · Level ★{Math.min(n.owls[sel.id], 6)}{n.owls[sel.id] > 1 ? ` (found ${n.owls[sel.id]}×)` : ''}</p>
+      <div className="ow-bond" aria-label={`Bond ${n.pets[sel.id]?.bond || 0} of 10`}>{Array.from({ length: 10 }, (_, i) => <i key={i} className={i < (n.pets[sel.id]?.bond || 0) ? 'on' : ''} />)}</div><small className="ow-note">Bond grows when you care for it each day. A stronger bond boosts its ability.</small>
+      <div className="ow-abox"><b>⚡ {sel.ab.name}</b><ul>{abil(sel, power(n, sel.id))}</ul></div>
+      <div className="ow-row"><button className="ow-btn sm" onClick={() => care(sel, 'pet')} disabled={n.pets[sel.id]?.petDay === today()}>{n.pets[sel.id]?.petDay === today() ? '🤲 Petted today' : '🤲 Pet'}</button>
+        <button className="ow-btn sm" onClick={() => care(sel, 'feed')} disabled={n.pets[sel.id]?.feedDay === today()}>{n.pets[sel.id]?.feedDay === today() ? '🍖 Fed today' : '🍖 Treat · 🪙 2'}</button></div>
+      <form className="ow-row" onSubmit={e => { e.preventDefault(); const p = n.pets[sel.id] || { name: '', bond: 0, petDay: '', feedDay: '' }; save({ ...n, pets: { ...n.pets, [sel.id]: { ...p, name: rename.trim().slice(0, 16) } } }); sfx('good') }}>
+        <input value={rename} onChange={e => setRename(e.target.value)} maxLength={16} placeholder="Give it a name" aria-label="Pet name" className="ow-in" /><button className="ow-btn ghost sm">Save name</button></form>
       <p className="ow-fact">{sel.fact}</p>
-      <div className="ow-row"><button className="ow-btn" onClick={() => { save({ ...n, buddy: sel.id }); setSel(null); sfx('good'); api.say(`${sel.name} is your study buddy now!`, 'cheer') }} disabled={buddy?.id === sel.id}>{buddy?.id === sel.id ? '⭐ Current buddy' : 'Make my buddy'}</button><button className="ow-btn ghost" onClick={() => setSel(null)}>Close</button></div></div></div>}
+      <div className="ow-row"><button className="ow-btn" onClick={() => { save({ ...n, buddy: sel.id }); setSel(null); sfx('good'); api.say(`${petName(n, sel)} is your study buddy now!`, 'cheer') }} disabled={buddy?.id === sel.id}>{buddy?.id === sel.id ? '⭐ Current buddy' : 'Make my buddy'}</button><button className="ow-btn ghost" onClick={() => setSel(null)}>Close</button></div></div></div>}
 
     {hatch && <div className={'ow-ov hatch s' + stage} role="dialog" aria-modal="true" aria-label="Hatching" style={{ ['--rc' as any]: RARITY[hatch.sp.r][1] }} onClick={() => stage >= 3 && close()}>
       {stage < 3 ? <div className="ow-stage"><EggArt t={hatch.t} size={150} crack={stage} wobble /><p>{stage === 0 ? 'Something is moving inside…' : stage === 1 ? 'It is cracking!' : '💥'}</p></div>
         : <div className="ow-reveal"><div className="ow-rays" aria-hidden /><OwlArt sp={hatch.sp} size={190} /><span className="ow-tag big" style={{ background: RARITY[hatch.sp.r][1] }}>{RARITY[hatch.sp.r][0]}</span><h2>{hatch.sp.name}</h2>
-          <p>{hatch.dup ? `Duplicate! Level ★${Math.min(hatch.stars, 6)} and ${hatch.refund} coins back.` : '✨ New owl added to your Owldex!'}</p><p className="ow-fact">{hatch.sp.fact}</p><button className="ow-btn" onClick={close}>Awesome!</button></div>}</div>}
+          <p>{hatch.dup ? `Duplicate! Level ★${Math.min(hatch.stars, 6)} and ${hatch.refund} coins back.` : '✨ New owl added to your Owldex!'}</p><div className="ow-abox"><b>⚡ {hatch.sp.ab.name}</b><ul>{abil(hatch.sp, 1)}</ul></div><button className="ow-btn" onClick={close}>Awesome!</button></div>}</div>}
   </section>
 }
