@@ -3,46 +3,49 @@ export type Fx =
   | { k: 'xp'; on: 'any' | 'quiz' | 'exam' | 'cards' | 'session' | 'night'; pct: number }
   | { k: 'double'; chance: number } | { k: 'coins'; chance: number; amt: number } | { k: 'gift'; coins: number }
   | { k: 'warm'; pct: number } | { k: 'luck'; pct: number } | { k: 'discount'; pct: number }
+  | { k: 'perfect'; pct: number } | { k: 'rescue'; xp: number } | { k: 'floor'; xp: number } | { k: 'big'; pct: number }
+  | { k: 'time'; when: 'dawn' | 'weekend' | 'late'; pct: number } | { k: 'nth'; n: number; pct: number } | { k: 'loyal'; per: number; max: number }
+  | { k: 'rebate'; chance: number } | { k: 'twin'; chance: number } | { k: 'interest'; pct: number; cap: number } | { k: 'tender' }
   | { k: 'chain'; per: number; max: number } | { k: 'first'; xp: number } | { k: 'jackpot'; chance: number; coins: number }
 export type Sp = { id: string; name: string; r: number; body: string; belly: string; eye: string; acc: string[]; fact: string; ab: { name: string; fx: Fx[] } }
 export const RARITY = [['Common', '#8b95a7'], ['Uncommon', '#3fb950'], ['Rare', '#3b82f6'], ['Epic', '#a855f7'], ['Legendary', '#f5b301'], ['Mythic', '#ff2d75'], ['Transcendent', '#19e3ff'], ['Godly', '#ff8a00'], ['Divine', '#ffe9a0'], ['Ascendant', '#6366f1'], ['Unreal', '#22ff99'], ['Sovereign', '#ff0033']] as const
 const o = (id: string, name: string, r: number, body: string, belly: string, eye: string, acc: string[], ab: string, fx: Fx[], fact: string): Sp => ({ id, name, r, body, belly, eye, acc, fact, ab: { name: ab, fx } })
 export const OWLS: Sp[] = [
-  o('barn', 'Barn Owl', 0, '#d9a35f', '#fff1dc', '#2b2b2b', ['spots'], 'Silent Wings', [{ k: 'xp', on: 'quiz', pct: 12 }], 'Its heart-shaped face funnels sound to its ears, so it can hear a mouse under snow.'),
-  o('tawny', 'Tawny Owl', 0, '#9b6b43', '#e8d3b5', '#3a2a1a', [], 'Night Hoot', [{ k: 'xp', on: 'night', pct: 20 }], 'The classic “twit-twoo” is actually two owls calling to each other.'),
+  o('barn', 'Barn Owl', 0, '#d9a35f', '#fff1dc', '#2b2b2b', ['spots'], 'Silent Precision', [{ k: 'perfect', pct: 40 }], 'Its heart-shaped face funnels sound to its ears, so it can hear a mouse under snow.'),
+  o('tawny', 'Tawny Owl', 0, '#9b6b43', '#e8d3b5', '#3a2a1a', [], 'Night Hoot', [{ k: 'time', when: 'late', pct: 25 }], 'The classic “twit-twoo” is actually two owls calling to each other.'),
   o('verr', "Verreaux's Eagle-Owl", 0, '#7d8590', '#d5d9de', '#3b2f2f', ['tufts', 'lids'], 'Eagle-Owl Eyes', [{ k: 'xp', on: 'exam', pct: 18 }], 'Africa’s giant “milky” owl, with pink eyelids. Seen in Zimbabwe’s bushveld.'),
-  o('pearl', 'Pearl-spotted Owlet', 1, '#8a7358', '#f1e9da', '#facc15', ['spots'], 'Daylight Hunter', [{ k: 'xp', on: 'cards', pct: 20 }], 'A tiny owl found in Zimbabwe that hunts in daylight. It has fake “eyes” on the back of its head.'),
+  o('pearl', 'Pearl-spotted Owlet', 1, '#8a7358', '#f1e9da', '#facc15', ['spots'], 'Daylight Hunter', [{ k: 'time', when: 'dawn', pct: 35 }], 'A tiny owl found in Zimbabwe that hunts in daylight. It has fake “eyes” on the back of its head.'),
   o('little', 'Little Owl', 1, '#b08968', '#f3e5d0', '#f5d142', [], 'Stern Stare', [{ k: 'xp', on: 'session', pct: 25 }], 'Only about 22 cm tall, and famous for its stern, frowning look.'),
   o('scops', 'African Scops Owl', 1, '#8d8d86', '#dcdcd4', '#fcd34d', ['tufts'], 'Branch Stash', [{ k: 'gift', coins: 4 }], 'Sleeps pressed against a branch and looks exactly like a piece of bark.'),
-  o('long', 'Long-eared Owl', 1, '#c28a4a', '#f0d9b0', '#f97316', ['tufts'], 'Listening Ears', [{ k: 'xp', on: 'any', pct: 6 }, { k: 'coins', chance: 15, amt: 1 }], 'Its “ears” are just feathers. Its real ears are hidden on the sides of its head.'),
+  o('long', 'Long-eared Owl', 1, '#c28a4a', '#f0d9b0', '#f97316', ['tufts'], 'Never Empty-Handed', [{ k: 'rescue', xp: 8 }], 'Its “ears” are just feathers. Its real ears are hidden on the sides of its head.'),
   o('burrow', 'Burrowing Owl', 1, '#c9a66b', '#fffaf0', '#facc15', ['spots'], 'Tunnel Treasure', [{ k: 'coins', chance: 30, amt: 1 }], 'Lives in holes in the ground and bobs its head when it is curious.'),
   o('wood', 'African Wood Owl', 1, '#a0522d', '#f0d9b5', '#2a1a0f', [], 'Dusk Laughter', [{ k: 'warm', pct: 15 }], 'Its hooting duets at dusk sound like people laughing in the forest.'),
-  o('spotted', 'Spotted Owl', 2, '#6e5a47', '#e9dcc8', '#1f1a14', ['spots'], 'Old Forest Wisdom', [{ k: 'xp', on: 'any', pct: 10 }], 'Needs old, quiet forests and can live for over 15 years.'),
+  o('spotted', 'Spotted Owl', 2, '#6e5a47', '#e9dcc8', '#1f1a14', ['spots'], 'Old Forest Loyalty', [{ k: 'loyal', per: 3, max: 30 }], 'Needs old, quiet forests and can live for over 15 years.'),
   o('snowy', 'Snowy Owl', 2, '#f4f7fb', '#ffffff', '#fbbf24', ['spots', 'snow'], 'Snowflake Focus', [{ k: 'xp', on: 'session', pct: 35 }], 'Flies silently over the Arctic and can see a lemming from far away.'),
   o('grey', 'Great Grey Owl', 2, '#8e98a3', '#d6dbe0', '#fde047', ['rings'], 'Egg Whisperer', [{ k: 'discount', pct: 15 }], 'Huge face discs act like satellite dishes. It can hear prey under 30 cm of snow.'),
   o('pel', "Pel's Fishing Owl", 2, '#d17b32', '#f2c88f', '#111827', ['lids'], 'Fisher’s Catch', [{ k: 'gift', coins: 10 }], 'A rare giant orange owl that catches fish along African rivers at night.'),
-  o('elf', 'Elf Owl', 2, '#b5a48a', '#efe6d6', '#fde047', ['cap'], 'Tiny but Mighty', [{ k: 'warm', pct: 25 }], 'The smallest owl in the world, no bigger than a sparrow.'),
-  o('galaxy', 'Galaxy Owl', 3, '#2b2a6b', '#5b4fd1', '#ffe66d', ['stars'], 'Star Collector', [{ k: 'xp', on: 'any', pct: 15 }, { k: 'coins', chance: 20, amt: 2 }], 'Hoots in the night and a new star appears in its feathers every time it learns something.'),
+  o('elf', 'Elf Owl', 2, '#b5a48a', '#efe6d6', '#fde047', ['cap'], 'Tiny but Mighty', [{ k: 'floor', xp: 4 }], 'The smallest owl in the world, no bigger than a sparrow.'),
+  o('galaxy', 'Galaxy Owl', 3, '#2b2a6b', '#5b4fd1', '#ffe66d', ['stars'], 'Lucky Star', [{ k: 'nth', n: 5, pct: 100 }, { k: 'coins', chance: 15, amt: 2 }], 'Hoots in the night and a new star appears in its feathers every time it learns something.'),
   o('storm', 'Storm Owl', 3, '#3b4a63', '#8aa4c8', '#7dd3fc', ['bolt'], 'Lightning Strike', [{ k: 'double', chance: 20 }], 'Rides thunderclouds. Its wingbeats sound like distant thunder.'),
-  o('ember', 'Ember Owl', 3, '#c2410c', '#fdba74', '#fde047', ['flame'], 'Exam Fire', [{ k: 'xp', on: 'quiz', pct: 25 }, { k: 'xp', on: 'exam', pct: 25 }], 'Warms a whole classroom just by sitting on a desk. Loves exam season.'),
-  o('frost', 'Frost Owl', 3, '#7dd3fc', '#e0f7ff', '#1e3a8a', ['snow'], 'Frozen Fortune', [{ k: 'luck', pct: 25 }, { k: 'discount', pct: 8 }], 'Keeps a calm, cool head even when the test is hard.'),
+  o('ember', 'Ember Owl', 3, '#c2410c', '#fdba74', '#fde047', ['flame'], 'Flawless Flame', [{ k: 'perfect', pct: 50 }, { k: 'xp', on: 'exam', pct: 20 }], 'Warms a whole classroom just by sitting on a desk. Loves exam season.'),
+  o('frost', 'Frost Owl', 3, '#7dd3fc', '#e0f7ff', '#1e3a8a', ['snow'], 'Frozen Fortune', [{ k: 'rebate', chance: 15 }, { k: 'luck', pct: 25 }], 'Keeps a calm, cool head even when the test is hard.'),
   o('gold', 'Golden Scholar', 4, '#f5b301', '#fff3b0', '#7c2d12', ['cap', 'halo', 'tufts'], 'Golden Scholar', [{ k: 'xp', on: 'any', pct: 25 }, { k: 'gift', coins: 8 }], 'Graduated top of every class in the forest. Only the most dedicated students hatch this one.'),
-  o('cosmic', 'Cosmic Professor', 4, '#1a1040', '#7c3aed', '#f0abfc', ['glasses', 'stars', 'halo'], 'Cosmic Mind', [{ k: 'xp', on: 'any', pct: 20 }, { k: 'double', chance: 15 }, { k: 'luck', pct: 20 }], 'Has read every book in the universe, twice. Knows the answer before you ask.'),
-  o('phoenix', 'Phoenix Owl', 5, '#e11d48', '#fbbf24', '#fff7ae', ['flame', 'halo', 'tufts'], 'Rebirth Flames', [{ k: 'xp', on: 'any', pct: 35 }, { k: 'double', chance: 25 }], 'Burns out after every exam and rises again from its own ashes, smarter each time.'),
-  o('void', 'Eclipse Owl', 5, '#0b0720', '#4c1d95', '#ff2d75', ['stars', 'tufts'], 'Total Eclipse', [{ k: 'xp', on: 'any', pct: 30 }, { k: 'coins', chance: 40, amt: 3 }, { k: 'discount', pct: 15 }], 'Appears only when the sun and moon line up. Its feathers swallow light and hide a galaxy of secrets.'),
-  o('dragon', 'Dragon Owl', 5, '#047857', '#6ee7b7', '#fde047', ['tufts', 'bolt'], 'Dragon Hoard', [{ k: 'gift', coins: 30 }, { k: 'coins', chance: 35, amt: 3 }, { k: 'xp', on: 'exam', pct: 30 }], 'Half owl, half dragon, and it hoards coins instead of gold. Guards the Owldex.'),
-  o('celestial', 'Celestial Archon', 6, '#fdf4ff', '#a5f3fc', '#7c3aed', ['halo', 'stars', 'glasses', 'tufts'], 'Ascension', [{ k: 'xp', on: 'any', pct: 60 }, { k: 'double', chance: 35 }, { k: 'luck', pct: 40 }, { k: 'gift', coins: 40 }], 'Lives above the clouds and teaches the stars to shine. Almost no student ever meets one.'),
-  o('tuff', 'Too Tuff Owl', 6, '#111827', '#fb7185', '#fde047', ['glasses', 'cap', 'flame', 'halo'], 'Too Tuff to Fail', [{ k: 'xp', on: 'any', pct: 50 }, { k: 'double', chance: 40 }, { k: 'coins', chance: 50, amt: 5 }, { k: 'discount', pct: 25 }], 'Wears shades indoors, never studies the night before, and still gets the top mark. Too tuff.'),
-  o('zeus', 'Zeus Owl', 7, '#1e3a8a', '#bfdbfe', '#fde047', ['bolt', 'halo', 'tufts'], 'Thunder Verdict', [{ k: 'xp', on: 'any', pct: 40 }, { k: 'double', chance: 30 }, { k: 'jackpot', chance: 8, coins: 40 }], 'Judges every answer from a storm cloud. Right answers get a lightning bolt of XP.'),
+  o('cosmic', 'Cosmic Professor', 4, '#1a1040', '#7c3aed', '#f0abfc', ['glasses', 'stars', 'halo'], 'Cosmic Mind', [{ k: 'big', pct: 40 }, { k: 'twin', chance: 15 }, { k: 'luck', pct: 20 }], 'Has read every book in the universe, twice. Knows the answer before you ask.'),
+  o('phoenix', 'Phoenix Owl', 5, '#e11d48', '#fbbf24', '#fff7ae', ['flame', 'halo', 'tufts'], 'Rebirth Flames', [{ k: 'rescue', xp: 30 }, { k: 'double', chance: 25 }], 'Burns out after every exam and rises again from its own ashes, smarter each time.'),
+  o('void', 'Eclipse Owl', 5, '#0b0720', '#4c1d95', '#ff2d75', ['stars', 'tufts'], 'Total Eclipse', [{ k: 'time', when: 'late', pct: 60 }, { k: 'coins', chance: 40, amt: 3 }, { k: 'discount', pct: 15 }], 'Appears only when the sun and moon line up. Its feathers swallow light and hide a galaxy of secrets.'),
+  o('dragon', 'Dragon Owl', 5, '#047857', '#6ee7b7', '#fde047', ['tufts', 'bolt'], 'Dragon Hoard', [{ k: 'interest', pct: 5, cap: 150 }, { k: 'gift', coins: 30 }, { k: 'xp', on: 'exam', pct: 30 }], 'Half owl, half dragon, and it hoards coins instead of gold. Guards the Owldex.'),
+  o('celestial', 'Celestial Archon', 6, '#fdf4ff', '#a5f3fc', '#7c3aed', ['halo', 'stars', 'glasses', 'tufts'], 'Ascension', [{ k: 'perfect', pct: 80 }, { k: 'loyal', per: 4, max: 40 }, { k: 'twin', chance: 20 }, { k: 'luck', pct: 40 }], 'Lives above the clouds and teaches the stars to shine. Almost no student ever meets one.'),
+  o('tuff', 'Too Tuff Owl', 6, '#111827', '#fb7185', '#fde047', ['glasses', 'cap', 'flame', 'halo'], 'Too Tuff to Fail', [{ k: 'double', chance: 40 }, { k: 'rebate', chance: 25 }, { k: 'rescue', xp: 25 }, { k: 'coins', chance: 50, amt: 5 }], 'Wears shades indoors, never studies the night before, and still gets the top mark. Too tuff.'),
+  o('zeus', 'Zeus Owl', 7, '#1e3a8a', '#bfdbfe', '#fde047', ['bolt', 'halo', 'tufts'], 'Thunder Verdict', [{ k: 'nth', n: 3, pct: 100 }, { k: 'jackpot', chance: 8, coins: 40 }], 'Judges every answer from a storm cloud. Right answers get a lightning bolt of XP.'),
   o('titan', 'Titan Owl', 7, '#78350f', '#fcd34d', '#ef4444', ['tufts', 'rings', 'flame'], 'Titan Stride', [{ k: 'chain', per: 4, max: 60 }, { k: 'xp', on: 'exam', pct: 40 }, { k: 'gift', coins: 60 }], 'Each step is bigger than the last. The more you study in a day, the harder it hits.'),
-  o('seraph', 'Seraph Owl', 8, '#fff7ed', '#fde68a', '#38bdf8', ['halo', 'stars', 'tufts'], 'Six Wings', [{ k: 'xp', on: 'any', pct: 50 }, { k: 'first', xp: 40 }, { k: 'luck', pct: 50 }, { k: 'gift', coins: 100 }], 'Six shining wings and a golden halo. It greets your first study of the day with a blessing.'),
-  o('oracle', 'Oracle Owl', 8, '#312e81', '#c7d2fe', '#f0abfc', ['glasses', 'stars', 'halo'], 'Foresight', [{ k: 'chain', per: 5, max: 75 }, { k: 'double', chance: 30 }, { k: 'discount', pct: 30 }, { k: 'luck', pct: 40 }], 'Saw your exam questions coming a week ago. Never says how.'),
-  o('nebula', 'Nebula Sage', 9, '#4c1d95', '#f0abfc', '#22d3ee', ['stars', 'glasses', 'cap'], 'Nebula Mind', [{ k: 'xp', on: 'any', pct: 60 }, { k: 'jackpot', chance: 10, coins: 120 }, { k: 'first', xp: 60 }, { k: 'warm', pct: 40 }], 'Grew inside a cloud of stardust and remembers every star by name.'),
-  o('aether', 'Aether Owl', 9, '#0e7490', '#a5f3fc', '#fef08a', ['halo', 'snow', 'tufts'], 'Pure Aether', [{ k: 'xp', on: 'any', pct: 55 }, { k: 'double', chance: 35 }, { k: 'chain', per: 6, max: 90 }, { k: 'gift', coins: 200 }], 'Made of the fifth element. It floats an inch above the branch and never gets tired.'),
-  o('glitch', 'Glitch Owl', 10, '#0a0a0a', '#22ff99', '#ff0066', ['bolt', 'stars', 'tufts'], 'Glitch in the System', [{ k: 'double', chance: 45 }, { k: 'jackpot', chance: 12, coins: 200 }, { k: 'xp', on: 'any', pct: 70 }, { k: 'discount', pct: 40 }], 'Not supposed to exist. The game keeps trying to delete it and it keeps coming back.'),
-  o('mirage', 'Mirage Owl', 10, '#c084fc', '#fef3c7', '#0ea5e9', ['rings', 'stars', 'halo'], 'Double Vision', [{ k: 'xp', on: 'any', pct: 65 }, { k: 'double', chance: 40 }, { k: 'coins', chance: 60, amt: 10 }, { k: 'luck', pct: 60 }], 'Is it there? Is it two? Even the Owldex is not sure.'),
-  o('emperor', 'Emperor Owl', 11, '#7f1d1d', '#fde68a', '#fef08a', ['cap', 'halo', 'tufts', 'glasses'], 'Imperial Decree', [{ k: 'xp', on: 'any', pct: 100 }, { k: 'double', chance: 40 }, { k: 'first', xp: 100 }, { k: 'gift', coins: 500 }, { k: 'discount', pct: 40 }], 'Rules every nest from a golden throne. Its first decree: all homework gets done.'),
-  o('overlord', 'Overlord Owl', 11, '#020617', '#ff0033', '#ffe600', ['flame', 'halo', 'glasses', 'tufts', 'stars'], 'Rule the Leaderboard', [{ k: 'xp', on: 'any', pct: 120 }, { k: 'double', chance: 50 }, { k: 'chain', per: 8, max: 150 }, { k: 'jackpot', chance: 15, coins: 500 }, { k: 'gift', coins: 400 }, { k: 'luck', pct: 70 }], 'The final boss of the Owldex. Nobody has seen one that was not already top of the class.'),
+  o('seraph', 'Seraph Owl', 8, '#fff7ed', '#fde68a', '#38bdf8', ['halo', 'stars', 'tufts'], 'Six Wings', [{ k: 'first', xp: 40 }, { k: 'time', when: 'dawn', pct: 60 }, { k: 'gift', coins: 100 }, { k: 'luck', pct: 50 }], 'Six shining wings and a golden halo. It greets your first study of the day with a blessing.'),
+  o('oracle', 'Oracle Owl', 8, '#312e81', '#c7d2fe', '#f0abfc', ['glasses', 'stars', 'halo'], 'Foresight', [{ k: 'perfect', pct: 100 }, { k: 'rebate', chance: 30 }, { k: 'discount', pct: 30 }, { k: 'luck', pct: 40 }], 'Saw your exam questions coming a week ago. Never says how.'),
+  o('nebula', 'Nebula Sage', 9, '#4c1d95', '#f0abfc', '#22d3ee', ['stars', 'glasses', 'cap'], 'Nebula Mind', [{ k: 'big', pct: 50 }, { k: 'jackpot', chance: 10, coins: 120 }, { k: 'first', xp: 60 }, { k: 'warm', pct: 40 }], 'Grew inside a cloud of stardust and remembers every star by name.'),
+  o('aether', 'Aether Owl', 9, '#0e7490', '#a5f3fc', '#fef08a', ['halo', 'snow', 'tufts'], 'Pure Aether', [{ k: 'chain', per: 6, max: 90 }, { k: 'interest', pct: 8, cap: 500 }, { k: 'twin', chance: 20 }], 'Made of the fifth element. It floats an inch above the branch and never gets tired.'),
+  o('glitch', 'Glitch Owl', 10, '#0a0a0a', '#22ff99', '#ff0066', ['bolt', 'stars', 'tufts'], 'Glitch in the System', [{ k: 'floor', xp: 15 }, { k: 'double', chance: 45 }, { k: 'jackpot', chance: 12, coins: 200 }, { k: 'discount', pct: 40 }], 'Not supposed to exist. The game keeps trying to delete it and it keeps coming back.'),
+  o('mirage', 'Mirage Owl', 10, '#c084fc', '#fef3c7', '#0ea5e9', ['rings', 'stars', 'halo'], 'Double Vision', [{ k: 'twin', chance: 35 }, { k: 'double', chance: 40 }, { k: 'rescue', xp: 40 }, { k: 'coins', chance: 60, amt: 10 }], 'Is it there? Is it two? Even the Owldex is not sure.'),
+  o('emperor', 'Emperor Owl', 11, '#7f1d1d', '#fde68a', '#fef08a', ['cap', 'halo', 'tufts', 'glasses'], 'Imperial Decree', [{ k: 'loyal', per: 8, max: 100 }, { k: 'first', xp: 100 }, { k: 'interest', pct: 10, cap: 2000 }, { k: 'gift', coins: 500 }, { k: 'tender' }], 'Rules every nest from a golden throne. Its first decree: all homework gets done.'),
+  o('overlord', 'Overlord Owl', 11, '#020617', '#ff0033', '#ffe600', ['flame', 'halo', 'glasses', 'tufts', 'stars'], 'Rule the Leaderboard', [{ k: 'nth', n: 3, pct: 150 }, { k: 'chain', per: 8, max: 150 }, { k: 'jackpot', chance: 15, coins: 500 }, { k: 'double', chance: 50 }, { k: 'tender' }], 'The final boss of the Owldex. Nobody has seen one that was not already top of the class.'),
 ]
 export type Pet = { name: string; bond: number; petDay: string; feedDay: string }
 export type Offer = { code: string; owl: string; secret: string }
@@ -65,6 +68,17 @@ export function describe(f: Fx, p = 1): string {
     case 'gift': return `Brings you ${r(f.coins)} coins once a day`
     case 'warm': return `Your Study Egg hatches ${Math.min(60, r(f.pct))}% sooner`
     case 'luck': return `${Math.min(70, r(f.pct))}% luck: a second chance at a rarer owl when you hatch`
+    case 'perfect': return `+${r(f.pct)}% XP when you get a perfect score (quiz, cards or exam)`
+    case 'rescue': return `Bad result? Still get ${r(f.xp)} bonus XP so you never leave empty-handed`
+    case 'floor': return `Every study move pays at least ${r(f.xp)} XP`
+    case 'big': return `+${r(f.pct)}% XP on big study moves (15 XP or more)`
+    case 'time': return `+${r(f.pct)}% XP ${({ dawn: 'when you study before 9 am', weekend: 'on Saturdays and Sundays', late: 'when you study after 6 pm' })[f.when]}`
+    case 'nth': return `Every ${f.n}${f.n === 3 ? 'rd' : 'th'} study move today gets +${r(f.pct)}% XP`
+    case 'loyal': return `Loyalty: +${r(f.per)}% XP for each day in a row you study, up to +${r(f.max)}%`
+    case 'rebate': return `${Math.min(60, r(f.chance))}% chance an egg you buy is FREE (coins refunded)`
+    case 'twin': return `${Math.min(50, r(f.chance))}% chance a hatched owl comes as a TWIN (two copies)`
+    case 'interest': return `Coin interest: collect ${f.pct}% of your coins daily (up to ${r(f.cap)})`
+    case 'tender': return 'Treats are free and every pet or treat gives double bond'
     case 'chain': return `Study streak: +${r(f.per)}% XP for each study move today, up to +${r(f.max)}%`
     case 'first': return `Your first study move each day gets +${r(f.xp)} bonus XP`
     case 'jackpot': return `${Math.min(40, r(f.chance))}% chance of a JACKPOT of ${r(f.coins)} coins`
@@ -74,15 +88,24 @@ export function describe(f: Fx, p = 1): string {
 export function fxOf(n: Nest) { const b = buddyOf(n); return b ? { b, p: power(n, b.id), fx: b.ab.fx } : null }
 
 /** Extra XP and coins from the buddy owl for one study event. */
-export function buddyBonus(ev: { k: string }, baseXp: number): { xp: number; coins: number; who: string } | null {
+export function buddyBonus(ev: any, baseXp: number): { xp: number; coins: number; who: string } | null {
   const n = loadNest(), f = fxOf(n); if (!f || ev.k === 'bonus') return null
   let xp = 0, coins = 0; const h = new Date().getHours()
-  let st = { d: '', n: 0 }; try { st = JSON.parse(localStorage.getItem('wob:chainst') || 'null') || st } catch {}
-  if (st.d !== today()) st = { d: today(), n: 0 }
-  const before = st.n; try { localStorage.setItem('wob:chainst', JSON.stringify({ d: st.d, n: st.n + 1 })) } catch {}
+  let st = { d: '', n: 0, days: 0 }; try { st = { ...st, ...(JSON.parse(localStorage.getItem('wob:chainst') || 'null') || {}) } } catch {}
+  const t = today(); if (st.d !== t) { const y = new Date(Date.now() - 864e5); st = { d: t, n: 0, days: st.d === `${y.getFullYear()}-${y.getMonth() + 1}-${y.getDate()}` ? (st.days || 1) + 1 : 1 } }
+  const before = st.n; try { localStorage.setItem('wob:chainst', JSON.stringify({ ...st, n: st.n + 1 })) } catch {}
+  const ratio = ev.k === 'quiz' && ev.total > 0 ? ev.right / ev.total : ev.k === 'cards' && ev.total > 0 ? ev.known / ev.total : ev.k === 'exam' && ev.marks > 0 ? ev.awarded / ev.marks : -1
+  const dow = new Date().getDay()
   for (const x of f.fx) {
     if (x.k === 'xp' && (x.on === 'any' || x.on === ev.k || (x.on === 'night' && (h >= 18 || h < 5)))) xp += Math.round(baseXp * (x.pct * f.p) / 100)
     else if (x.k === 'double' && baseXp > 0 && Math.random() * 100 < Math.min(60, x.chance * f.p)) xp += baseXp
+    else if (x.k === 'perfect') { if (ratio >= (ev.k === 'exam' ? 0.9 : 1)) xp += Math.round(baseXp * x.pct * f.p / 100) }
+    else if (x.k === 'rescue') { if (ratio >= 0 && ratio < 0.5) xp += Math.round(x.xp * f.p) }
+    else if (x.k === 'floor') { if (baseXp > 0) xp += Math.max(0, Math.round(x.xp * f.p) - baseXp) }
+    else if (x.k === 'big') { if (baseXp >= 15) xp += Math.round(baseXp * x.pct * f.p / 100) }
+    else if (x.k === 'time') { if ((x.when === 'dawn' && h < 9) || (x.when === 'late' && (h >= 18 || h < 5)) || (x.when === 'weekend' && (dow === 0 || dow === 6))) xp += Math.round(baseXp * x.pct * f.p / 100) }
+    else if (x.k === 'nth') { if ((before + 1) % x.n === 0) xp += Math.round(baseXp * x.pct * f.p / 100) }
+    else if (x.k === 'loyal') xp += Math.round(baseXp * Math.min(x.max * f.p, x.per * f.p * Math.max(0, st.days - 1)) / 100)
     else if (x.k === 'chain') xp += Math.round(baseXp * Math.min(x.max * f.p, x.per * f.p * before) / 100)
     else if (x.k === 'first' && before === 0) xp += Math.round(x.xp * f.p)
     else if (x.k === 'jackpot' && Math.random() * 100 < Math.min(40, x.chance * f.p)) coins += Math.round(x.coins * f.p)
@@ -113,4 +136,18 @@ export async function codeHash(c: string): Promise<string> {
 }
 
 /** Fingerprint of the admin code. Unlocks the local admin panel in the Nest. */
-export const ADMIN_HASH = '3040d8a2a40f90a42ab15acd1b14d96f4135a159f63147f184c141cb0e748eb0'
+export const ADMIN_HASH = 'eef98d0d7e2a6121f3683a5806c60fb62679aed85341869c4965df7e4a6980d5'
+export async function adminHash(c: string): Promise<string> {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('wob-owl-admin:' + c.trim()))
+  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('')
+}
+
+/** One-time coin reset. Bump COIN_EPOCH to reset everyone's coins again (and lock admin mode) the next time they open the app. */
+export const COIN_EPOCH = '2'
+export function coinReset(xp: number): boolean {
+  try {
+    if (localStorage.getItem('wob:epoch') === COIN_EPOCH) return false
+    const rw = JSON.parse(localStorage.getItem('wob:rw') || '{}'); rw.spent = Math.floor(Math.max(0, xp) / 5); localStorage.setItem('wob:rw', JSON.stringify(rw))
+    const n = loadNest(); saveNest({ ...n, adm: false }); localStorage.setItem('wob:epoch', COIN_EPOCH); return true
+  } catch { return false }
+}

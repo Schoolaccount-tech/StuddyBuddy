@@ -5,7 +5,7 @@ import { dayKey, GOAL } from '@/lib/progress'
 import { sfx, confetti } from '@/lib/fx'
 import type { Api } from './api'
 import { rpc } from '@/lib/league'
-import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, CODES, ADMIN_HASH, codeHash, type Offer, type Sp, type Nest, type Fx } from '@/lib/owls'
+import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, CODES, ADMIN_HASH, codeHash, adminHash, type Offer, type Sp, type Nest, type Fx } from '@/lib/owls'
 
 // Owl Nest: hatch eggs by studying (or buy them with coins) and collect owls of twelve rarities, from Common to Sovereign.
 type Tier = { id: string; name: string; cost: number; need: number; odds: number[]; c1: string; c2: string; mark: string; blurb: string }
@@ -75,7 +75,7 @@ const mood = (n: Nest, id: string) => { const p = n.pets[id]; if (!p) return ['�
 
 export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => void }) {
   const [n, setN] = useState<Nest>(NEST_DEF); const [ready, setReady] = useState(false); const [spent, setSpent] = useState(0)
-  const [hatch, setHatch] = useState<null | { t: Tier; sp: Sp; dup: boolean; stars: number; refund: number }>(null); const [stage, setStage] = useState(0); const [sel, setSel] = useState<Sp | null>(null)
+  const [hatch, setHatch] = useState<null | { t: Tier; sp: Sp; dup: boolean; stars: number; refund: number; twin?: boolean }>(null); const [stage, setStage] = useState(0); const [sel, setSel] = useState<Sp | null>(null)
   const [code, setCode] = useState(''); const [codeMsg, setCodeMsg] = useState<null | { ok: boolean; t: string }>(null); const [say, setSay] = useState(''); const [hearts, setHearts] = useState(0); const [rename, setRename] = useState('')
   const [tmsg, setTmsg] = useState<null | { ok: boolean; t: string }>(null); const [tcode, setTcode] = useState(''); const [peek, setPeek] = useState<null | { code: string; owl: string }>(null); const [busy, setBusy] = useState(false); const [pickO, setPickO] = useState(''); const [acoins, setAcoins] = useState('1000'); const [aowl, setAowl] = useState('overlord')
   const timers = useRef<number[]>([])
@@ -88,16 +88,16 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
   const sumPct = (k: 'warm' | 'luck' | 'discount') => eff(k).reduce((a, f: any) => a + f.pct * bp, 0)
   const need = Math.round(TIERS[0].need * (1 - Math.min(60, sumPct('warm')) / 100)), disc = Math.min(40, sumPct('discount'))
   const cost = (t: Tier) => Math.max(1, Math.ceil(t.cost * (1 - disc / 100)))
-  const gift = eff('gift').reduce((a, f: any) => a + Math.round(f.coins * bp), 0); const giftReady = gift > 0 && n.gift !== today()
+  const gift = eff('gift').reduce((a, f: any) => a + Math.round(f.coins * bp), 0) + eff('interest').reduce((a, f: any) => a + Math.min(Math.round(f.cap * bp), Math.floor(coins * f.pct / 100)), 0), tender = eff('tender').length > 0, rebate = Math.min(60, eff('rebate').reduce((a, f: any) => a + f.chance * bp, 0)), twin = Math.min(50, eff('twin').reduce((a, f: any) => a + f.chance * bp, 0)); const giftReady = gift > 0 && n.gift !== today()
   const warm = n.egg ? Math.max(0, api.p.xp - n.egg.start) : 0, pct = Math.min(100, Math.round((warm / need) * 100)), ready2 = !!n.egg && warm >= need
   const found = OWLS.filter(o => n.owls[o.id]).length
   const goalN = api.p.goal.d === dayKey() ? Math.min(GOAL, api.p.goal.n) : 0
 
   function doHatch(t: Tier, base: Nest) {
-    const sp = pickOwl(t.odds, base.pity, Math.min(70, sumPct('luck'))), had = base.owls[sp.id] || 0, refund = had ? REFUND[sp.r] : 0
+    const sp = pickOwl(t.odds, base.pity, Math.min(70, sumPct('luck'))), had = base.owls[sp.id] || 0, refund = had ? REFUND[sp.r] : 0, tw = Math.random() * 100 < twin ? 1 : 0
     if (refund) pay(-refund)
-    save({ ...base, owls: { ...base.owls, [sp.id]: had + 1 }, hatched: base.hatched + 1, pity: sp.r >= 2 ? 0 : base.pity + 1, buddy: base.buddy || sp.id })
-    setHatch({ t, sp, dup: !!had, stars: had + 1, refund }); setStage(0); sfx('pop')
+    save({ ...base, owls: { ...base.owls, [sp.id]: had + 1 + tw }, hatched: base.hatched + 1, pity: sp.r >= 2 ? 0 : base.pity + 1, buddy: base.buddy || sp.id })
+    setHatch({ t, sp, dup: !!had, stars: had + 1 + tw, refund, twin: !!tw }); setStage(0); sfx('pop')
     const at = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms))
     at(1500, () => { setStage(1); sfx('pop') }); at(2300, () => { setStage(2); sfx('good') })
     at(2800, () => { setStage(3); sfx(sp.r >= 3 ? 'level' : 'win'); confetti(sp.r >= 7 ? 7 : sp.r >= 6 ? 5 : sp.r >= 5 ? 3.5 : sp.r >= 4 ? 2 : sp.r >= 2 ? 1.2 : 0.6) })
@@ -105,20 +105,20 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
   function buy(t: Tier) {
     const c = cost(t)
     if (coins < c) { api.toast('🪙', 'Not enough coins yet', `You need ${c - coins} more. Study to earn XP, and 5 XP = 1 coin.`); sfx('bad'); return }
-    pay(c); doHatch(t, n)
+    pay(c); if (Math.random() * 100 < rebate) { pay(-c); api.toast('🎟️', 'Free egg!', `${buddy ? petName(n, buddy) : 'Your owl'} got your coins back`) } doHatch(t, n)
   }
   function claim() { pay(-gift); save({ ...n, gift: today() }); sfx('win'); confetti(0.5); api.toast('🎁', `${buddy ? petName(n, buddy) : 'Your owl'} brought ${gift} coins!`, buddy?.ab.name) }
   function care(s: Sp, kind: 'pet' | 'feed') {
     const t = today(), p = n.pets[s.id] || { name: '', bond: 0, petDay: '', feedDay: '' }
     if (kind === 'pet' ? p.petDay === t : p.feedDay === t) return
-    if (kind === 'feed') { if (coins < 2) { api.toast('🪙', 'A treat costs 2 coins', 'Study to earn more.'); sfx('bad'); return } pay(2) }
-    save({ ...n, pets: { ...n.pets, [s.id]: { ...p, bond: Math.min(10, p.bond + 1), petDay: kind === 'pet' ? t : p.petDay, feedDay: kind === 'feed' ? t : p.feedDay } } })
+    if (kind === 'feed' && !tender) { if (coins < 2) { api.toast('🪙', 'A treat costs 2 coins', 'Study to earn more.'); sfx('bad'); return } pay(2) }
+    save({ ...n, pets: { ...n.pets, [s.id]: { ...p, bond: Math.min(10, p.bond + (tender ? 2 : 1)), petDay: kind === 'pet' ? t : p.petDay, feedDay: kind === 'feed' ? t : p.feedDay } } })
     setSay(kind === 'feed' ? 'Yum! Thank you! 🍖' : SAYS[Math.floor(Math.random() * SAYS.length)]); setHearts(h => h + 1); sfx('good'); setTimeout(() => setSay(''), 2500)
   }
   async function redeem(e: React.FormEvent) {
     e.preventDefault(); const raw = code.trim(); if (!raw) return
     const h = await codeHash(raw), c = CODES[h]
-    if (h === ADMIN_HASH) { save({ ...n, adm: true }); setCode(''); setCodeMsg({ ok: true, t: '👑 Admin mode unlocked on this device. Scroll down to the Admin panel.' }); sfx('level'); confetti(3); return }
+    if (await adminHash(raw) === ADMIN_HASH) { save({ ...n, adm: true }); setCode(''); setCodeMsg({ ok: true, t: '👑 Admin mode unlocked on this device. Scroll down to the Admin panel.' }); sfx('level'); confetti(3); return }
     if (!c) { setCodeMsg({ ok: false, t: 'That code does not work. Check the spelling.' }); sfx('bad'); return }
     if (n.codes.includes(h)) { setCodeMsg({ ok: false, t: 'You already used that code on this device.' }); sfx('bad'); return }
     pay(-c.coins); save({ ...n, codes: [...n.codes, h] }); setCode(''); setCodeMsg({ ok: true, t: `🎉 ${c.msg}` }); sfx('win'); confetti(c.coins >= 5000 ? 4 : 1.2)
@@ -232,6 +232,6 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     {hatch && <div className={'ow-ov hatch s' + stage} role="dialog" aria-modal="true" aria-label="Hatching" style={{ ['--rc' as any]: RARITY[hatch.sp.r][1] }} onClick={() => stage >= 3 && close()}>
       {stage < 3 ? <div className="ow-stage"><EggArt t={hatch.t} size={150} crack={stage} wobble /><p>{stage === 0 ? 'Something is moving inside…' : stage === 1 ? 'It is cracking!' : '💥'}</p></div>
         : <div className="ow-reveal"><div className="ow-rays" aria-hidden /><OwlArt sp={hatch.sp} size={190} /><span className={'ow-tag big' + tagC(hatch.sp.r)} style={tagS(hatch.sp.r)}>{RARITY[hatch.sp.r][0]}</span><h2>{hatch.sp.name}</h2>
-          <p>{hatch.dup ? `Duplicate! Level ★${Math.min(hatch.stars, 6)} and ${hatch.refund} coins back.` : '✨ New owl added to your Owldex!'}</p><div className="ow-abox"><b>⚡ {hatch.sp.ab.name}</b><ul>{abil(hatch.sp, 1)}</ul></div><button className="ow-btn" onClick={close}>Awesome!</button></div>}</div>}
+          <p>{hatch.twin ? '👯 TWIN! You got two copies. ' : ''}{hatch.dup ? `Duplicate! Level ★${Math.min(hatch.stars, 6)} and ${hatch.refund} coins back.` : '✨ New owl added to your Owldex!'}</p><div className="ow-abox"><b>⚡ {hatch.sp.ab.name}</b><ul>{abil(hatch.sp, 1)}</ul></div><button className="ow-btn" onClick={close}>Awesome!</button></div>}</div>}
   </section>
 }

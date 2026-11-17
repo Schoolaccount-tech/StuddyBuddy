@@ -13,7 +13,7 @@ import Ask from '@/components/Ask'
 import Quiz from '@/components/Quiz'
 import Decks from '@/components/Decks'
 import NestTab from '@/components/Nest'
-import { buddyBonus } from '@/lib/owls'
+import { buddyBonus, coinReset } from '@/lib/owls'
 import Cards from '@/components/Cards'
 import Exam from '@/components/Exam'
 import Focus from '@/components/Focus'
@@ -76,7 +76,7 @@ export default function Home() {
     const rbo = store.get('rainbow', false); setRb(!!rbo); if (rbo) document.documentElement.dataset.rainbow = '1'
     applyLook(readLook())
     const bd = store.get('board', false); setBoard(!!bd); if (bd) document.documentElement.dataset.board = '1'
-    const l = load(); pRef.current = l; setP(l); setSnd(soundOn())
+    const l = load(); pRef.current = l; setP(l); setSnd(soundOn()); if (coinReset(l.xp)) setTimeout(() => toast('🪙', 'Coins have been reset', 'Everyone starts fresh. Your owls are safe!', true), 1500)
     const a = store.get('accent', 'owl'); setAccent(a); document.documentElement.dataset.accent = a
     const m = store.get<'auto' | 'light' | 'dark'>('mode', 'auto'); setMode(m); if (m !== 'auto') document.documentElement.dataset.theme = m
     say(l.nick ? `Welcome back, ${l.nick}!` : 'Hoot! Ready to learn something?', 'cheer', 5200)
