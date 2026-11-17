@@ -4,21 +4,23 @@ import { store } from '@/lib/api'
 import { dayKey, GOAL } from '@/lib/progress'
 import { sfx, confetti } from '@/lib/fx'
 import type { Api } from './api'
-import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, type Sp, type Nest, type Fx } from '@/lib/owls'
+import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, CODES, codeHash, type Sp, type Nest, type Fx } from '@/lib/owls'
 
-// Owl Nest: hatch eggs by studying (or buy them with coins) and collect owls of five rarities.
+// Owl Nest: hatch eggs by studying (or buy them with coins) and collect owls of seven rarities, from Common to Transcendent.
 type Tier = { id: string; name: string; cost: number; need: number; odds: number[]; c1: string; c2: string; mark: string; blurb: string }
 const TIERS: Tier[] = [
-  { id: 'study', name: 'Study Egg', cost: 0, need: 120, odds: [70, 22, 7, 1, 0], c1: '#fff7e0', c2: '#86d19a', mark: 'dots', blurb: 'Free. Warms up as you earn XP.' },
-  { id: 'nest', name: 'Nest Egg', cost: 15, need: 0, odds: [60, 28, 10, 2, 0], c1: '#e0f2ff', c2: '#60a5fa', mark: 'dots', blurb: 'Commons, uncommons and a chance at rare.' },
-  { id: 'moon', name: 'Moon Egg', cost: 40, need: 0, odds: [0, 50, 38, 11, 1], c1: '#ede9fe', c2: '#8b5cf6', mark: 'stars', blurb: 'No commons. Good odds at rare and epic.' },
-  { id: 'gold', name: 'Golden Egg', cost: 90, need: 0, odds: [0, 0, 55, 35, 10], c1: '#fff3b0', c2: '#f5b301', mark: 'stars', blurb: 'Rare or better every time. Legendary chance!' },
+  { id: 'study', name: 'Study Egg', cost: 0, need: 120, odds: [70, 22, 7, 1, 0, 0, 0], c1: '#fff7e0', c2: '#86d19a', mark: 'dots', blurb: 'Free. Warms up as you earn XP.' },
+  { id: 'nest', name: 'Nest Egg', cost: 15, need: 0, odds: [60, 28, 10, 2, 0, 0, 0], c1: '#e0f2ff', c2: '#60a5fa', mark: 'dots', blurb: 'Commons, uncommons and a chance at rare.' },
+  { id: 'moon', name: 'Moon Egg', cost: 40, need: 0, odds: [0, 50, 38, 11, 1, 0, 0], c1: '#ede9fe', c2: '#8b5cf6', mark: 'stars', blurb: 'No commons. Good odds at rare and epic.' },
+  { id: 'gold', name: 'Golden Egg', cost: 90, need: 0, odds: [0, 0, 55, 35, 9, 1, 0], c1: '#fff3b0', c2: '#f5b301', mark: 'stars', blurb: 'Rare or better every time. Legendary chance!' },
+  { id: 'mythic', name: 'Mythic Egg', cost: 400, need: 0, odds: [0, 0, 0, 50, 35, 14, 1], c1: '#ffe4ec', c2: '#ff2d75', mark: 'stars', blurb: 'Epic or better. Real chance of a Mythic owl!' },
+  { id: 'cosmic', name: 'Transcendent Egg', cost: 2000, need: 0, odds: [0, 0, 0, 0, 40, 45, 15], c1: '#e0fbff', c2: '#7c3aed', mark: 'stars', blurb: 'Legendary or better. The only way to meet a Transcendent owl.' },
 ]
 
 export function OwlArt({ sp, size = 96, still }: { sp: Sp | null; size?: number; still?: boolean }) {
   const a = sp?.acc ?? ['tufts'], body = sp ? sp.body : '#2a2f55', belly = sp ? sp.belly : '#3a4070', eye = sp?.eye ?? '#555'
   const has = (k: string) => a.includes(k) && !!sp, c = sp ? RARITY[sp.r][1] : '#555'
-  return <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={sp ? sp.name : 'Undiscovered owl'} className={'ow-art' + (still ? '' : ' idle')} style={sp && sp.r >= 3 ? { filter: `drop-shadow(0 0 8px ${c})` } : undefined}>
+  return <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={sp ? sp.name : 'Undiscovered owl'} className={'ow-art' + (still ? '' : ' idle')} style={sp && sp.r >= 3 ? { filter: `drop-shadow(0 0 ${sp.r >= 5 ? 14 : 8}px ${c})` } : undefined}>
     {(has('tufts') || !sp) && <><path d="M26 34 L20 8 L42 24Z" fill={body} /><path d="M74 34 L80 8 L58 24Z" fill={body} /></>}
     <ellipse cx="50" cy="60" rx="32" ry="34" fill={body} />
     <path d="M21 52 Q8 74 27 88 Q30 70 29 54Z" fill="#000" opacity=".2" /><path d="M79 52 Q92 74 73 88 Q70 70 71 54Z" fill="#000" opacity=".2" />
@@ -52,11 +54,11 @@ function EggArt({ t, size = 90, crack = 0, wobble }: { t: Tier; size?: number; c
   </svg>
 }
 
-const REFUND = [3, 6, 12, 25, 60]
+const REFUND = [3, 6, 12, 25, 60, 150, 400]
 const SAYS = ['Hoo hoo! 💛', 'That tickles! 🪶', 'Best study buddy ever!', 'Let us learn something new!', '*happy owl noises*', 'You are doing great!']
 function rollRarity(w: number[]) { let x = Math.random() * w.reduce((a, b) => a + b, 0), r = 0; for (; r < w.length - 1; r++) { if (x < w[r]) break; x -= w[r] } while (w[r] === 0 && r < w.length - 1) r++; return r }
 function pickOwl(odds: number[], pity: number, luck: number): Sp {
-  let w = odds.slice(); if (pity >= 9 && w[0] + w[1] > 0) w = [0, 0, Math.max(w[2], 60), Math.max(w[3], 30), Math.max(w[4], 10)]
+  let w = odds.slice(); if (pity >= 9 && w[0] + w[1] > 0) w = [0, 0, Math.max(w[2], 60), Math.max(w[3], 30), Math.max(w[4], 10), w[5], w[6]]
   let r = rollRarity(w); if (luck > 0 && Math.random() * 100 < luck) r = Math.max(r, rollRarity(w))
   const pool = OWLS.filter(o => o.r === r); return pool[Math.floor(Math.random() * pool.length)]
 }
@@ -65,7 +67,7 @@ const mood = (n: Nest, id: string) => { const p = n.pets[id]; if (!p) return ['�
 export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => void }) {
   const [n, setN] = useState<Nest>(NEST_DEF); const [ready, setReady] = useState(false); const [spent, setSpent] = useState(0)
   const [hatch, setHatch] = useState<null | { t: Tier; sp: Sp; dup: boolean; stars: number; refund: number }>(null); const [stage, setStage] = useState(0); const [sel, setSel] = useState<Sp | null>(null)
-  const [say, setSay] = useState(''); const [hearts, setHearts] = useState(0); const [rename, setRename] = useState('')
+  const [code, setCode] = useState(''); const [codeMsg, setCodeMsg] = useState<null | { ok: boolean; t: string }>(null); const [say, setSay] = useState(''); const [hearts, setHearts] = useState(0); const [rename, setRename] = useState('')
   const timers = useRef<number[]>([])
   useEffect(() => { setN(loadNest()); setSpent(store.get<any>('rw', { spent: 0 }).spent || 0); setReady(true); return () => timers.current.forEach(clearTimeout) }, [])
   const save = (m: Nest) => { setN(m); saveNest(m) }
@@ -88,7 +90,7 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     setHatch({ t, sp, dup: !!had, stars: had + 1, refund }); setStage(0); sfx('pop')
     const at = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms))
     at(1500, () => { setStage(1); sfx('pop') }); at(2300, () => { setStage(2); sfx('good') })
-    at(2800, () => { setStage(3); sfx(sp.r >= 3 ? 'level' : 'win'); confetti(sp.r >= 4 ? 2 : sp.r >= 2 ? 1.2 : 0.6) })
+    at(2800, () => { setStage(3); sfx(sp.r >= 3 ? 'level' : 'win'); confetti(sp.r >= 6 ? 5 : sp.r >= 5 ? 3.5 : sp.r >= 4 ? 2 : sp.r >= 2 ? 1.2 : 0.6) })
   }
   function buy(t: Tier) {
     const c = cost(t)
@@ -102,6 +104,13 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     if (kind === 'feed') { if (coins < 2) { api.toast('🪙', 'A treat costs 2 coins', 'Study to earn more.'); sfx('bad'); return } pay(2) }
     save({ ...n, pets: { ...n.pets, [s.id]: { ...p, bond: Math.min(10, p.bond + 1), petDay: kind === 'pet' ? t : p.petDay, feedDay: kind === 'feed' ? t : p.feedDay } } })
     setSay(kind === 'feed' ? 'Yum! Thank you! 🍖' : SAYS[Math.floor(Math.random() * SAYS.length)]); setHearts(h => h + 1); sfx('good'); setTimeout(() => setSay(''), 2500)
+  }
+  async function redeem(e: React.FormEvent) {
+    e.preventDefault(); const raw = code.trim(); if (!raw) return
+    const h = await codeHash(raw), c = CODES[h]
+    if (!c) { setCodeMsg({ ok: false, t: 'That code does not work. Check the spelling.' }); sfx('bad'); return }
+    if (n.codes.includes(h)) { setCodeMsg({ ok: false, t: 'You already used that code on this device.' }); sfx('bad'); return }
+    pay(-c.coins); save({ ...n, codes: [...n.codes, h] }); setCode(''); setCodeMsg({ ok: true, t: `🎉 ${c.msg}` }); sfx('win'); confetti(c.coins >= 5000 ? 4 : 1.2)
   }
   function start() { save({ ...n, egg: { start: api.p.xp } }); sfx('good') }
   function close() { timers.current.forEach(clearTimeout); timers.current = []; setHatch(null) }
@@ -126,7 +135,11 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
       <EggArt t={t} size={70} /><b>{t.name}</b><small>{t.blurb}</small>
       <div className="ow-odds" aria-label="Odds">{RARITY.map(([nm, c], i) => t.odds[i] > 0 && <span key={nm} style={{ background: c }} title={`${nm} ${t.odds[i]}%`}>{t.odds[i]}%</span>)}</div>
       <button className="ow-btn" onClick={() => buy(t)} disabled={coins < cost(t)}>🪙 {cost(t)}{cost(t) < t.cost && <s> {t.cost}</s>} · Hatch</button></div>)}</div>
-    <p className="ow-note">Colours show the chance of each rarity. {RARITY.map(([nm]) => <span key={nm} className="ow-dot">{nm}</span>)} Bad luck protection: after 9 hatches without a Rare, the next one is guaranteed Rare or better. A duplicate levels your owl up (stronger ability) and gives coins back.</p>
+    <p className="ow-note">Colours show the chance of each rarity. {RARITY.map(([nm, c]) => <span key={nm} className="ow-dot" style={{ background: c }}>{nm}</span>)} Bad luck protection: after 9 hatches without a Rare, the next one is guaranteed Rare or better. A duplicate levels your owl up (stronger ability) and gives coins back.</p>
+
+    <h3 className="ow-h">🔐 Secret code</h3>
+    <form className="ow-code" onSubmit={redeem}><input value={code} onChange={e => { setCode(e.target.value); setCodeMsg(null) }} placeholder="Type a secret code" aria-label="Secret code" autoCapitalize="none" autoComplete="off" spellCheck={false} maxLength={30} /><button className="ow-btn" disabled={!code.trim()}>Redeem</button></form>
+    {codeMsg && <p className={'ow-codemsg ' + (codeMsg.ok ? 'ok' : 'no')} role="status">{codeMsg.t}</p>}
 
     <h3 className="ow-h">📖 Owldex <small>({found}/{OWLS.length})</small></h3>
     <div className="ow-dex">{OWLS.map((s, i) => { const k = sk(s); return <button key={s.id} className={'ow-slot' + (k ? ' got' : '') + (buddy?.id === s.id ? ' buddy' : '')} style={{ ['--rc' as any]: RARITY[s.r][1], animationDelay: i * 25 + 'ms' }} onClick={() => { if (k) { setSel(s); setRename(n.pets[s.id]?.name || '') } }} aria-label={k ? s.name : 'Undiscovered owl'}>
@@ -135,7 +148,7 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     {sel && <div className="ow-ov" onClick={() => setSel(null)}><div className="ow-modal" role="dialog" aria-modal="true" aria-label={sel.name} onClick={e => e.stopPropagation()} style={{ ['--rc' as any]: RARITY[sel.r][1] }}>
       <div className="ow-pet" key={hearts}><OwlArt sp={sel} size={140} />{hearts > 0 && <span className="ow-hearts" aria-hidden>💗💛💗</span>}</div>
       {say && <div className="ow-say" role="status">{say}</div>}
-      <h3>{petName(n, sel)}</h3><span className="ow-tag" style={{ background: RARITY[sel.r][1] }}>{RARITY[sel.r][0]} · {sel.name}</span>
+      <h3>{petName(n, sel)}</h3><span className={'ow-tag' + (sel.r === 6 ? ' rb' : '')} style={{ background: RARITY[sel.r][1] }}>{RARITY[sel.r][0]} · {sel.name}</span>
       <p className="ow-note">{mood(n, sel.id)[0]} {mood(n, sel.id)[1]} · Level ★{Math.min(n.owls[sel.id], 6)}{n.owls[sel.id] > 1 ? ` (found ${n.owls[sel.id]}×)` : ''}</p>
       <div className="ow-bond" aria-label={`Bond ${n.pets[sel.id]?.bond || 0} of 10`}>{Array.from({ length: 10 }, (_, i) => <i key={i} className={i < (n.pets[sel.id]?.bond || 0) ? 'on' : ''} />)}</div><small className="ow-note">Bond grows when you care for it each day. A stronger bond boosts its ability.</small>
       <div className="ow-abox"><b>⚡ {sel.ab.name}</b><ul>{abil(sel, power(n, sel.id))}</ul></div>
@@ -148,7 +161,7 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
 
     {hatch && <div className={'ow-ov hatch s' + stage} role="dialog" aria-modal="true" aria-label="Hatching" style={{ ['--rc' as any]: RARITY[hatch.sp.r][1] }} onClick={() => stage >= 3 && close()}>
       {stage < 3 ? <div className="ow-stage"><EggArt t={hatch.t} size={150} crack={stage} wobble /><p>{stage === 0 ? 'Something is moving inside…' : stage === 1 ? 'It is cracking!' : '💥'}</p></div>
-        : <div className="ow-reveal"><div className="ow-rays" aria-hidden /><OwlArt sp={hatch.sp} size={190} /><span className="ow-tag big" style={{ background: RARITY[hatch.sp.r][1] }}>{RARITY[hatch.sp.r][0]}</span><h2>{hatch.sp.name}</h2>
+        : <div className="ow-reveal"><div className="ow-rays" aria-hidden /><OwlArt sp={hatch.sp} size={190} /><span className={'ow-tag big' + (hatch.sp.r === 6 ? ' rb' : '')} style={{ background: RARITY[hatch.sp.r][1] }}>{RARITY[hatch.sp.r][0]}</span><h2>{hatch.sp.name}</h2>
           <p>{hatch.dup ? `Duplicate! Level ★${Math.min(hatch.stars, 6)} and ${hatch.refund} coins back.` : '✨ New owl added to your Owldex!'}</p><div className="ow-abox"><b>⚡ {hatch.sp.ab.name}</b><ul>{abil(hatch.sp, 1)}</ul></div><button className="ow-btn" onClick={close}>Awesome!</button></div>}</div>}
   </section>
 }

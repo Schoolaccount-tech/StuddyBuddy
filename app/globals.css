@@ -767,3 +767,8 @@ html[data-calm="1"] .trail,html[data-calm="1"] .stars,html[data-calm="1"] .ticke
 .gzseats button.on,.gzpred button.on,.gzstakes button.on{background:#7c5cff;border-color:#7c5cff;color:#fff}.gzstakes button:disabled{opacity:.4}
 .gzbets{margin:10px 0}.gzbets .up{color:var(--good)}.gzbets .dn{color:var(--bad)}.lgrow.me{outline:2px solid #7c5cff;border-radius:12px}
 .gzrev{margin-top:18px;display:grid;gap:10px}.gzri{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:12px;animation:owrise .3s both}.gzri.ok{border-color:color-mix(in srgb,var(--good) 55%,var(--line))}.gzri.no{border-color:color-mix(in srgb,var(--bad) 55%,var(--line))}.gzrq{display:flex;gap:8px}.gzri p{margin:4px 0}
+.ow-code{display:flex;gap:10px;flex-wrap:wrap}.ow-code input{flex:1;min-width:180px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--bg);font:inherit;color:inherit}.ow-code input:focus{outline:0;border-color:var(--owl)}
+.ow-codemsg{font-weight:800;margin:8px 0;animation:owrise .3s both}.ow-codemsg.ok{color:var(--good)}.ow-codemsg.no{color:var(--bad)}
+.ow-tag.rb{background:linear-gradient(90deg,#ff2d75,#ffb300,#4cc96b,#19e3ff,#7c5cff,#ff2d75)!important;background-size:200% 100%;animation:owrb 3s linear infinite;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+@keyframes owrb{to{background-position:200% 0}}
+.ow-ov.hatch[style*="#19e3ff"]{background:radial-gradient(circle,rgba(25,227,255,.25),rgba(10,12,35,.92) 70%)}

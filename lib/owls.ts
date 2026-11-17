@@ -4,7 +4,7 @@ export type Fx =
   | { k: 'double'; chance: number } | { k: 'coins'; chance: number; amt: number } | { k: 'gift'; coins: number }
   | { k: 'warm'; pct: number } | { k: 'luck'; pct: number } | { k: 'discount'; pct: number }
 export type Sp = { id: string; name: string; r: number; body: string; belly: string; eye: string; acc: string[]; fact: string; ab: { name: string; fx: Fx[] } }
-export const RARITY = [['Common', '#8b95a7'], ['Uncommon', '#3fb950'], ['Rare', '#3b82f6'], ['Epic', '#a855f7'], ['Legendary', '#f5b301']] as const
+export const RARITY = [['Common', '#8b95a7'], ['Uncommon', '#3fb950'], ['Rare', '#3b82f6'], ['Epic', '#a855f7'], ['Legendary', '#f5b301'], ['Mythic', '#ff2d75'], ['Transcendent', '#19e3ff']] as const
 const o = (id: string, name: string, r: number, body: string, belly: string, eye: string, acc: string[], ab: string, fx: Fx[], fact: string): Sp => ({ id, name, r, body, belly, eye, acc, fact, ab: { name: ab, fx } })
 export const OWLS: Sp[] = [
   o('barn', 'Barn Owl', 0, '#d9a35f', '#fff1dc', '#2b2b2b', ['spots'], 'Silent Wings', [{ k: 'xp', on: 'quiz', pct: 12 }], 'Its heart-shaped face funnels sound to its ears, so it can hear a mouse under snow.'),
@@ -27,10 +27,15 @@ export const OWLS: Sp[] = [
   o('frost', 'Frost Owl', 3, '#7dd3fc', '#e0f7ff', '#1e3a8a', ['snow'], 'Frozen Fortune', [{ k: 'luck', pct: 25 }, { k: 'discount', pct: 8 }], 'Keeps a calm, cool head even when the test is hard.'),
   o('gold', 'Golden Scholar', 4, '#f5b301', '#fff3b0', '#7c2d12', ['cap', 'halo', 'tufts'], 'Golden Scholar', [{ k: 'xp', on: 'any', pct: 25 }, { k: 'gift', coins: 8 }], 'Graduated top of every class in the forest. Only the most dedicated students hatch this one.'),
   o('cosmic', 'Cosmic Professor', 4, '#1a1040', '#7c3aed', '#f0abfc', ['glasses', 'stars', 'halo'], 'Cosmic Mind', [{ k: 'xp', on: 'any', pct: 20 }, { k: 'double', chance: 15 }, { k: 'luck', pct: 20 }], 'Has read every book in the universe, twice. Knows the answer before you ask.'),
+  o('phoenix', 'Phoenix Owl', 5, '#e11d48', '#fbbf24', '#fff7ae', ['flame', 'halo', 'tufts'], 'Rebirth Flames', [{ k: 'xp', on: 'any', pct: 35 }, { k: 'double', chance: 25 }], 'Burns out after every exam and rises again from its own ashes, smarter each time.'),
+  o('void', 'Eclipse Owl', 5, '#0b0720', '#4c1d95', '#ff2d75', ['stars', 'tufts'], 'Total Eclipse', [{ k: 'xp', on: 'any', pct: 30 }, { k: 'coins', chance: 40, amt: 3 }, { k: 'discount', pct: 15 }], 'Appears only when the sun and moon line up. Its feathers swallow light and hide a galaxy of secrets.'),
+  o('dragon', 'Dragon Owl', 5, '#047857', '#6ee7b7', '#fde047', ['tufts', 'bolt'], 'Dragon Hoard', [{ k: 'gift', coins: 30 }, { k: 'coins', chance: 35, amt: 3 }, { k: 'xp', on: 'exam', pct: 30 }], 'Half owl, half dragon, and it hoards coins instead of gold. Guards the Owldex.'),
+  o('celestial', 'Celestial Archon', 6, '#fdf4ff', '#a5f3fc', '#7c3aed', ['halo', 'stars', 'glasses', 'tufts'], 'Ascension', [{ k: 'xp', on: 'any', pct: 60 }, { k: 'double', chance: 35 }, { k: 'luck', pct: 40 }, { k: 'gift', coins: 40 }], 'Lives above the clouds and teaches the stars to shine. Almost no student ever meets one.'),
+  o('tuff', 'Too Tuff Owl', 6, '#111827', '#fb7185', '#fde047', ['glasses', 'cap', 'flame', 'halo'], 'Too Tuff to Fail', [{ k: 'xp', on: 'any', pct: 50 }, { k: 'double', chance: 40 }, { k: 'coins', chance: 50, amt: 5 }, { k: 'discount', pct: 25 }], 'Wears shades indoors, never studies the night before, and still gets the top mark. Too tuff.'),
 ]
 export type Pet = { name: string; bond: number; petDay: string; feedDay: string }
-export type Nest = { owls: Record<string, number>; egg: { start: number } | null; buddy: string; hatched: number; pity: number; pets: Record<string, Pet>; gift: string }
-export const NEST_DEF: Nest = { owls: {}, egg: null, buddy: '', hatched: 0, pity: 0, pets: {}, gift: '' }
+export type Nest = { owls: Record<string, number>; egg: { start: number } | null; buddy: string; hatched: number; pity: number; pets: Record<string, Pet>; gift: string; codes: string[] }
+export const NEST_DEF: Nest = { owls: {}, egg: null, buddy: '', hatched: 0, pity: 0, pets: {}, gift: '', codes: [] }
 export const loadNest = (): Nest => { try { return { ...NEST_DEF, ...JSON.parse(localStorage.getItem('wob:nest') || '{}') } } catch { return { ...NEST_DEF } } }
 export const saveNest = (n: Nest) => { try { localStorage.setItem('wob:nest', JSON.stringify(n)) } catch {} }
 export const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}` }
@@ -63,4 +68,15 @@ export function buddyBonus(ev: { k: string }, baseXp: number): { xp: number; coi
     else if (x.k === 'coins' && Math.random() * 100 < Math.min(80, x.chance * f.p)) coins += Math.max(1, Math.round(x.amt * f.p))
   }
   return xp || coins ? { xp, coins, who: petName(n, f.b) } : null
+}
+
+/** Secret codes. Only a fingerprint (SHA-256) of each code is stored here, so reading the source does not reveal them. Each works once per device. */
+export const CODES: Record<string, { coins: number; msg: string }> = {
+  'e21a5f2a2a302d5f3a9442985609b730a97646b297487a45fdaa94a740b1908b': { coins: 10000, msg: 'TOO TUFF! 10,000 coins!' },
+  'd44aa1503dc23ead64e68996d0b1bb223b75f671218f7358fd2ab772913ab883': { coins: 500, msg: 'A wise choice! 500 coins!' },
+  '065912e1fe1a07c6ae89a6173f0202b0fcfce5f04699b20023a06f64d1df53d9': { coins: 250, msg: 'Hoot hoot! 250 coins!' },
+}
+export async function codeHash(c: string): Promise<string> {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('wob-owl-code:' + c.trim().toLowerCase()))
+  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('')
 }
