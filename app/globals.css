@@ -772,3 +772,6 @@ html[data-calm="1"] .trail,html[data-calm="1"] .stars,html[data-calm="1"] .ticke
 .ow-tag.rb{background:linear-gradient(90deg,#ff2d75,#ffb300,#4cc96b,#19e3ff,#7c5cff,#ff2d75)!important;background-size:200% 100%;animation:owrb 3s linear infinite;text-shadow:0 1px 2px rgba(0,0,0,.35)}
 @keyframes owrb{to{background-position:200% 0}}
 .ow-ov.hatch[style*="#19e3ff"]{background:radial-gradient(circle,rgba(25,227,255,.25),rgba(10,12,35,.92) 70%)}
+
+.ow-tag.sh{background-size:200% 100%;animation:owrb 2.5s linear infinite;text-shadow:0 1px 2px rgba(0,0,0,.4)}.ow-in{padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);font:inherit;color:inherit;max-width:100%}select.ow-in{flex:1;min-width:180px}
+.ow-offers{display:grid;gap:8px;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px;margin:10px 0}.ow-offer{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ow-offer span{flex:1;min-width:150px}.ow-pin{letter-spacing:.12em}.ow-ul{margin:6px 0;padding-left:18px;font-size:.9rem}

@@ -3,8 +3,9 @@ export type Fx =
   | { k: 'xp'; on: 'any' | 'quiz' | 'exam' | 'cards' | 'session' | 'night'; pct: number }
   | { k: 'double'; chance: number } | { k: 'coins'; chance: number; amt: number } | { k: 'gift'; coins: number }
   | { k: 'warm'; pct: number } | { k: 'luck'; pct: number } | { k: 'discount'; pct: number }
+  | { k: 'chain'; per: number; max: number } | { k: 'first'; xp: number } | { k: 'jackpot'; chance: number; coins: number }
 export type Sp = { id: string; name: string; r: number; body: string; belly: string; eye: string; acc: string[]; fact: string; ab: { name: string; fx: Fx[] } }
-export const RARITY = [['Common', '#8b95a7'], ['Uncommon', '#3fb950'], ['Rare', '#3b82f6'], ['Epic', '#a855f7'], ['Legendary', '#f5b301'], ['Mythic', '#ff2d75'], ['Transcendent', '#19e3ff']] as const
+export const RARITY = [['Common', '#8b95a7'], ['Uncommon', '#3fb950'], ['Rare', '#3b82f6'], ['Epic', '#a855f7'], ['Legendary', '#f5b301'], ['Mythic', '#ff2d75'], ['Transcendent', '#19e3ff'], ['Godly', '#ff8a00'], ['Divine', '#ffe9a0'], ['Ascendant', '#6366f1'], ['Unreal', '#22ff99'], ['Sovereign', '#ff0033']] as const
 const o = (id: string, name: string, r: number, body: string, belly: string, eye: string, acc: string[], ab: string, fx: Fx[], fact: string): Sp => ({ id, name, r, body, belly, eye, acc, fact, ab: { name: ab, fx } })
 export const OWLS: Sp[] = [
   o('barn', 'Barn Owl', 0, '#d9a35f', '#fff1dc', '#2b2b2b', ['spots'], 'Silent Wings', [{ k: 'xp', on: 'quiz', pct: 12 }], 'Its heart-shaped face funnels sound to its ears, so it can hear a mouse under snow.'),
@@ -32,10 +33,21 @@ export const OWLS: Sp[] = [
   o('dragon', 'Dragon Owl', 5, '#047857', '#6ee7b7', '#fde047', ['tufts', 'bolt'], 'Dragon Hoard', [{ k: 'gift', coins: 30 }, { k: 'coins', chance: 35, amt: 3 }, { k: 'xp', on: 'exam', pct: 30 }], 'Half owl, half dragon, and it hoards coins instead of gold. Guards the Owldex.'),
   o('celestial', 'Celestial Archon', 6, '#fdf4ff', '#a5f3fc', '#7c3aed', ['halo', 'stars', 'glasses', 'tufts'], 'Ascension', [{ k: 'xp', on: 'any', pct: 60 }, { k: 'double', chance: 35 }, { k: 'luck', pct: 40 }, { k: 'gift', coins: 40 }], 'Lives above the clouds and teaches the stars to shine. Almost no student ever meets one.'),
   o('tuff', 'Too Tuff Owl', 6, '#111827', '#fb7185', '#fde047', ['glasses', 'cap', 'flame', 'halo'], 'Too Tuff to Fail', [{ k: 'xp', on: 'any', pct: 50 }, { k: 'double', chance: 40 }, { k: 'coins', chance: 50, amt: 5 }, { k: 'discount', pct: 25 }], 'Wears shades indoors, never studies the night before, and still gets the top mark. Too tuff.'),
+  o('zeus', 'Zeus Owl', 7, '#1e3a8a', '#bfdbfe', '#fde047', ['bolt', 'halo', 'tufts'], 'Thunder Verdict', [{ k: 'xp', on: 'any', pct: 40 }, { k: 'double', chance: 30 }, { k: 'jackpot', chance: 8, coins: 40 }], 'Judges every answer from a storm cloud. Right answers get a lightning bolt of XP.'),
+  o('titan', 'Titan Owl', 7, '#78350f', '#fcd34d', '#ef4444', ['tufts', 'rings', 'flame'], 'Titan Stride', [{ k: 'chain', per: 4, max: 60 }, { k: 'xp', on: 'exam', pct: 40 }, { k: 'gift', coins: 60 }], 'Each step is bigger than the last. The more you study in a day, the harder it hits.'),
+  o('seraph', 'Seraph Owl', 8, '#fff7ed', '#fde68a', '#38bdf8', ['halo', 'stars', 'tufts'], 'Six Wings', [{ k: 'xp', on: 'any', pct: 50 }, { k: 'first', xp: 40 }, { k: 'luck', pct: 50 }, { k: 'gift', coins: 100 }], 'Six shining wings and a golden halo. It greets your first study of the day with a blessing.'),
+  o('oracle', 'Oracle Owl', 8, '#312e81', '#c7d2fe', '#f0abfc', ['glasses', 'stars', 'halo'], 'Foresight', [{ k: 'chain', per: 5, max: 75 }, { k: 'double', chance: 30 }, { k: 'discount', pct: 30 }, { k: 'luck', pct: 40 }], 'Saw your exam questions coming a week ago. Never says how.'),
+  o('nebula', 'Nebula Sage', 9, '#4c1d95', '#f0abfc', '#22d3ee', ['stars', 'glasses', 'cap'], 'Nebula Mind', [{ k: 'xp', on: 'any', pct: 60 }, { k: 'jackpot', chance: 10, coins: 120 }, { k: 'first', xp: 60 }, { k: 'warm', pct: 40 }], 'Grew inside a cloud of stardust and remembers every star by name.'),
+  o('aether', 'Aether Owl', 9, '#0e7490', '#a5f3fc', '#fef08a', ['halo', 'snow', 'tufts'], 'Pure Aether', [{ k: 'xp', on: 'any', pct: 55 }, { k: 'double', chance: 35 }, { k: 'chain', per: 6, max: 90 }, { k: 'gift', coins: 200 }], 'Made of the fifth element. It floats an inch above the branch and never gets tired.'),
+  o('glitch', 'Glitch Owl', 10, '#0a0a0a', '#22ff99', '#ff0066', ['bolt', 'stars', 'tufts'], 'Glitch in the System', [{ k: 'double', chance: 45 }, { k: 'jackpot', chance: 12, coins: 200 }, { k: 'xp', on: 'any', pct: 70 }, { k: 'discount', pct: 40 }], 'Not supposed to exist. The game keeps trying to delete it and it keeps coming back.'),
+  o('mirage', 'Mirage Owl', 10, '#c084fc', '#fef3c7', '#0ea5e9', ['rings', 'stars', 'halo'], 'Double Vision', [{ k: 'xp', on: 'any', pct: 65 }, { k: 'double', chance: 40 }, { k: 'coins', chance: 60, amt: 10 }, { k: 'luck', pct: 60 }], 'Is it there? Is it two? Even the Owldex is not sure.'),
+  o('emperor', 'Emperor Owl', 11, '#7f1d1d', '#fde68a', '#fef08a', ['cap', 'halo', 'tufts', 'glasses'], 'Imperial Decree', [{ k: 'xp', on: 'any', pct: 100 }, { k: 'double', chance: 40 }, { k: 'first', xp: 100 }, { k: 'gift', coins: 500 }, { k: 'discount', pct: 40 }], 'Rules every nest from a golden throne. Its first decree: all homework gets done.'),
+  o('overlord', 'Overlord Owl', 11, '#020617', '#ff0033', '#ffe600', ['flame', 'halo', 'glasses', 'tufts', 'stars'], 'Rule the Leaderboard', [{ k: 'xp', on: 'any', pct: 120 }, { k: 'double', chance: 50 }, { k: 'chain', per: 8, max: 150 }, { k: 'jackpot', chance: 15, coins: 500 }, { k: 'gift', coins: 400 }, { k: 'luck', pct: 70 }], 'The final boss of the Owldex. Nobody has seen one that was not already top of the class.'),
 ]
 export type Pet = { name: string; bond: number; petDay: string; feedDay: string }
-export type Nest = { owls: Record<string, number>; egg: { start: number } | null; buddy: string; hatched: number; pity: number; pets: Record<string, Pet>; gift: string; codes: string[] }
-export const NEST_DEF: Nest = { owls: {}, egg: null, buddy: '', hatched: 0, pity: 0, pets: {}, gift: '', codes: [] }
+export type Offer = { code: string; owl: string; secret: string }
+export type Nest = { owls: Record<string, number>; egg: { start: number } | null; buddy: string; hatched: number; pity: number; pets: Record<string, Pet>; gift: string; codes: string[]; adm: boolean; offers: Offer[] }
+export const NEST_DEF: Nest = { owls: {}, egg: null, buddy: '', hatched: 0, pity: 0, pets: {}, gift: '', codes: [], adm: false, offers: [] }
 export const loadNest = (): Nest => { try { return { ...NEST_DEF, ...JSON.parse(localStorage.getItem('wob:nest') || '{}') } } catch { return { ...NEST_DEF } } }
 export const saveNest = (n: Nest) => { try { localStorage.setItem('wob:nest', JSON.stringify(n)) } catch {} }
 export const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}` }
@@ -53,6 +65,9 @@ export function describe(f: Fx, p = 1): string {
     case 'gift': return `Brings you ${r(f.coins)} coins once a day`
     case 'warm': return `Your Study Egg hatches ${Math.min(60, r(f.pct))}% sooner`
     case 'luck': return `${Math.min(70, r(f.pct))}% luck: a second chance at a rarer owl when you hatch`
+    case 'chain': return `Study streak: +${r(f.per)}% XP for each study move today, up to +${r(f.max)}%`
+    case 'first': return `Your first study move each day gets +${r(f.xp)} bonus XP`
+    case 'jackpot': return `${Math.min(40, r(f.chance))}% chance of a JACKPOT of ${r(f.coins)} coins`
     case 'discount': return `Eggs in the shop cost ${Math.min(40, r(f.pct))}% less`
   }
 }
@@ -62,9 +77,15 @@ export function fxOf(n: Nest) { const b = buddyOf(n); return b ? { b, p: power(n
 export function buddyBonus(ev: { k: string }, baseXp: number): { xp: number; coins: number; who: string } | null {
   const n = loadNest(), f = fxOf(n); if (!f || ev.k === 'bonus') return null
   let xp = 0, coins = 0; const h = new Date().getHours()
+  let st = { d: '', n: 0 }; try { st = JSON.parse(localStorage.getItem('wob:chainst') || 'null') || st } catch {}
+  if (st.d !== today()) st = { d: today(), n: 0 }
+  const before = st.n; try { localStorage.setItem('wob:chainst', JSON.stringify({ d: st.d, n: st.n + 1 })) } catch {}
   for (const x of f.fx) {
     if (x.k === 'xp' && (x.on === 'any' || x.on === ev.k || (x.on === 'night' && (h >= 18 || h < 5)))) xp += Math.round(baseXp * (x.pct * f.p) / 100)
     else if (x.k === 'double' && baseXp > 0 && Math.random() * 100 < Math.min(60, x.chance * f.p)) xp += baseXp
+    else if (x.k === 'chain') xp += Math.round(baseXp * Math.min(x.max * f.p, x.per * f.p * before) / 100)
+    else if (x.k === 'first' && before === 0) xp += Math.round(x.xp * f.p)
+    else if (x.k === 'jackpot' && Math.random() * 100 < Math.min(40, x.chance * f.p)) coins += Math.round(x.coins * f.p)
     else if (x.k === 'coins' && Math.random() * 100 < Math.min(80, x.chance * f.p)) coins += Math.max(1, Math.round(x.amt * f.p))
   }
   return xp || coins ? { xp, coins, who: petName(n, f.b) } : null
@@ -75,8 +96,21 @@ export const CODES: Record<string, { coins: number; msg: string }> = {
   'e21a5f2a2a302d5f3a9442985609b730a97646b297487a45fdaa94a740b1908b': { coins: 10000, msg: 'TOO TUFF! 10,000 coins!' },
   'd44aa1503dc23ead64e68996d0b1bb223b75f671218f7358fd2ab772913ab883': { coins: 500, msg: 'A wise choice! 500 coins!' },
   '065912e1fe1a07c6ae89a6173f0202b0fcfce5f04699b20023a06f64d1df53d9': { coins: 250, msg: 'Hoot hoot! 250 coins!' },
+  'dad9b25d267053e8a8a40efac2b2444f3cbfe227f2271b319d1bc70739fa3fc4': { coins: 300, msg: 'Night owl! 300 coins!' },
+  '62ac1eaabea0e38346be612e727f7e9caa7285d84a598d58fb09e8863f424b0d': { coins: 750, msg: 'Golden egg found! 750 coins!' },
+  '7b72b18ba68fc98ab01fcd9cbbc401736e4d96c04f06acb3d8321618e737fb85': { coins: 1000, msg: 'Thanks Tavonga! 1,000 coins!' },
+  'dc8022de5a72faa9079d7d1bb197b803056adea6e4d74f611470619f497a6655': { coins: 1000, msg: 'Motivation unlocked! 1,000 coins!' },
+  'a99cd88935437f509f3f386ce4174c4a89db23114d9ff0deb74ee7a88da431c6': { coins: 600, msg: 'Westgate pride! 600 coins!' },
+  '149518a141ac7473d50a860c12bc2326b7eb2c903e7fa880132e4a9fe8796207': { coins: 400, msg: 'IGCSE ready! 400 coins!' },
+  'b74052c87553fd032f54e4b47e6c63c07ba4d11f4f78b16d3825d49f695c5a38': { coins: 1500, msg: 'Exam beast mode! 1,500 coins!' },
+  'f4f3d74aecb0bd1227c4a17101f71c347bf162d39165f0c6bad1ecd7e761570e': { coins: 2500, msg: 'Feather King! 2,500 coins!' },
+  'eea036d13a415e4df335ccf58be4e2436309793411296d73ef2ef9bd2d5c509b': { coins: 5000, msg: 'Mythic vibes! 5,000 coins!' },
+  '02b6f34da84f046827cc4de36349d00a2776f1be998abe463bcbecd5bfaca155': { coins: 8000, msg: 'Crown jewel! 8,000 coins!' },
 }
 export async function codeHash(c: string): Promise<string> {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('wob-owl-code:' + c.trim().toLowerCase()))
   return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('')
 }
+
+/** Fingerprint of the admin code. Unlocks the local admin panel in the Nest. */
+export const ADMIN_HASH = '3040d8a2a40f90a42ab15acd1b14d96f4135a159f63147f184c141cb0e748eb0'

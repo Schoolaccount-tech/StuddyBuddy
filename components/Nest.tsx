@@ -4,23 +4,30 @@ import { store } from '@/lib/api'
 import { dayKey, GOAL } from '@/lib/progress'
 import { sfx, confetti } from '@/lib/fx'
 import type { Api } from './api'
-import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, CODES, codeHash, type Sp, type Nest, type Fx } from '@/lib/owls'
+import { rpc } from '@/lib/league'
+import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, CODES, ADMIN_HASH, codeHash, type Offer, type Sp, type Nest, type Fx } from '@/lib/owls'
 
-// Owl Nest: hatch eggs by studying (or buy them with coins) and collect owls of seven rarities, from Common to Transcendent.
+// Owl Nest: hatch eggs by studying (or buy them with coins) and collect owls of twelve rarities, from Common to Sovereign.
 type Tier = { id: string; name: string; cost: number; need: number; odds: number[]; c1: string; c2: string; mark: string; blurb: string }
-const TIERS: Tier[] = [
+const RAW: Tier[] = [
   { id: 'study', name: 'Study Egg', cost: 0, need: 120, odds: [70, 22, 7, 1, 0, 0, 0], c1: '#fff7e0', c2: '#86d19a', mark: 'dots', blurb: 'Free. Warms up as you earn XP.' },
   { id: 'nest', name: 'Nest Egg', cost: 15, need: 0, odds: [60, 28, 10, 2, 0, 0, 0], c1: '#e0f2ff', c2: '#60a5fa', mark: 'dots', blurb: 'Commons, uncommons and a chance at rare.' },
   { id: 'moon', name: 'Moon Egg', cost: 40, need: 0, odds: [0, 50, 38, 11, 1, 0, 0], c1: '#ede9fe', c2: '#8b5cf6', mark: 'stars', blurb: 'No commons. Good odds at rare and epic.' },
   { id: 'gold', name: 'Golden Egg', cost: 90, need: 0, odds: [0, 0, 55, 35, 9, 1, 0], c1: '#fff3b0', c2: '#f5b301', mark: 'stars', blurb: 'Rare or better every time. Legendary chance!' },
   { id: 'mythic', name: 'Mythic Egg', cost: 400, need: 0, odds: [0, 0, 0, 50, 35, 14, 1], c1: '#ffe4ec', c2: '#ff2d75', mark: 'stars', blurb: 'Epic or better. Real chance of a Mythic owl!' },
   { id: 'cosmic', name: 'Transcendent Egg', cost: 2000, need: 0, odds: [0, 0, 0, 0, 40, 45, 15], c1: '#e0fbff', c2: '#7c3aed', mark: 'stars', blurb: 'Legendary or better. The only way to meet a Transcendent owl.' },
+  { id: 'godly', name: 'Godly Egg', cost: 8000, need: 0, odds: [0, 0, 0, 0, 0, 40, 40, 20], c1: '#fff1d6', c2: '#ff8a00', mark: 'stars', blurb: 'Mythic or better. Your way to a Godly owl.' },
+  { id: 'divine', name: 'Divine Egg', cost: 20000, need: 0, odds: [0, 0, 0, 0, 0, 0, 45, 40, 15], c1: '#fffbe6', c2: '#e8c75a', mark: 'stars', blurb: 'Transcendent or better. Holy hoots!' },
+  { id: 'asc', name: 'Ascendant Egg', cost: 50000, need: 0, odds: [0, 0, 0, 0, 0, 0, 0, 45, 40, 15], c1: '#e0e7ff', c2: '#6366f1', mark: 'stars', blurb: 'Godly or better. Rises above the clouds.' },
+  { id: 'unreal', name: 'Unreal Egg', cost: 120000, need: 0, odds: [0, 0, 0, 0, 0, 0, 0, 0, 45, 40, 15], c1: '#d1fae5', c2: '#22ff99', mark: 'stars', blurb: 'Divine or better. Is it even real?' },
+  { id: 'sov', name: 'Sovereign Egg', cost: 300000, need: 0, odds: [0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 40, 10], c1: '#ffd6dc', c2: '#ff0033', mark: 'stars', blurb: 'Ascendant or better. Rule them all.' },
 ]
+const TIERS: Tier[] = RAW.map(t => ({ ...t, odds: [...t.odds, ...Array(RARITY.length - t.odds.length).fill(0)] }))
 
 export function OwlArt({ sp, size = 96, still }: { sp: Sp | null; size?: number; still?: boolean }) {
   const a = sp?.acc ?? ['tufts'], body = sp ? sp.body : '#2a2f55', belly = sp ? sp.belly : '#3a4070', eye = sp?.eye ?? '#555'
   const has = (k: string) => a.includes(k) && !!sp, c = sp ? RARITY[sp.r][1] : '#555'
-  return <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={sp ? sp.name : 'Undiscovered owl'} className={'ow-art' + (still ? '' : ' idle')} style={sp && sp.r >= 3 ? { filter: `drop-shadow(0 0 ${sp.r >= 5 ? 14 : 8}px ${c})` } : undefined}>
+  return <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={sp ? sp.name : 'Undiscovered owl'} className={'ow-art' + (still ? '' : ' idle')} style={sp && sp.r >= 3 ? { filter: `drop-shadow(0 0 ${sp.r >= 7 ? 22 : sp.r >= 5 ? 14 : 8}px ${c})` } : undefined}>
     {(has('tufts') || !sp) && <><path d="M26 34 L20 8 L42 24Z" fill={body} /><path d="M74 34 L80 8 L58 24Z" fill={body} /></>}
     <ellipse cx="50" cy="60" rx="32" ry="34" fill={body} />
     <path d="M21 52 Q8 74 27 88 Q30 70 29 54Z" fill="#000" opacity=".2" /><path d="M79 52 Q92 74 73 88 Q70 70 71 54Z" fill="#000" opacity=".2" />
@@ -54,22 +61,25 @@ function EggArt({ t, size = 90, crack = 0, wobble }: { t: Tier; size?: number; c
   </svg>
 }
 
-const REFUND = [3, 6, 12, 25, 60, 150, 400]
+const REFUND = [3, 6, 12, 25, 60, 150, 400, 800, 1500, 3000, 6000, 12000]
 const SAYS = ['Hoo hoo! 💛', 'That tickles! 🪶', 'Best study buddy ever!', 'Let us learn something new!', '*happy owl noises*', 'You are doing great!']
-function rollRarity(w: number[]) { let x = Math.random() * w.reduce((a, b) => a + b, 0), r = 0; for (; r < w.length - 1; r++) { if (x < w[r]) break; x -= w[r] } while (w[r] === 0 && r < w.length - 1) r++; return r }
+function rollRarity(w: number[]) { let x = Math.random() * w.reduce((a, b) => a + b, 0), r = 0; for (; r < w.length - 1; r++) { if (x < w[r]) break; x -= w[r] } while (w[r] === 0 && r > 0) r--; return r }
 function pickOwl(odds: number[], pity: number, luck: number): Sp {
-  let w = odds.slice(); if (pity >= 9 && w[0] + w[1] > 0) w = [0, 0, Math.max(w[2], 60), Math.max(w[3], 30), Math.max(w[4], 10), w[5], w[6]]
+  let w = odds.slice(); if (pity >= 9 && w[0] + w[1] > 0) w = w.map((v, i) => i < 2 ? 0 : i === 2 ? Math.max(v, 60) : i === 3 ? Math.max(v, 30) : i === 4 ? Math.max(v, 10) : v)
   let r = rollRarity(w); if (luck > 0 && Math.random() * 100 < luck) r = Math.max(r, rollRarity(w))
   const pool = OWLS.filter(o => o.r === r); return pool[Math.floor(Math.random() * pool.length)]
 }
+const tagC = (r: number) => r === 6 ? ' rb' : r >= 7 ? ' sh' : ''
+const tagS = (r: number): React.CSSProperties => { const c = RARITY[r][1]; return r >= 7 ? { background: `linear-gradient(90deg,${c},#ffffffcc,${c})`, color: r === 8 ? '#5b4a00' : '#fff' } : { background: c } }
 const mood = (n: Nest, id: string) => { const p = n.pets[id]; if (!p) return ['😐', 'New friend']; const t = today(); if (p.petDay === t || p.feedDay === t) return ['😊', 'Happy']; return ['🥱', 'Sleepy: give it some love'] }
 
 export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => void }) {
   const [n, setN] = useState<Nest>(NEST_DEF); const [ready, setReady] = useState(false); const [spent, setSpent] = useState(0)
   const [hatch, setHatch] = useState<null | { t: Tier; sp: Sp; dup: boolean; stars: number; refund: number }>(null); const [stage, setStage] = useState(0); const [sel, setSel] = useState<Sp | null>(null)
   const [code, setCode] = useState(''); const [codeMsg, setCodeMsg] = useState<null | { ok: boolean; t: string }>(null); const [say, setSay] = useState(''); const [hearts, setHearts] = useState(0); const [rename, setRename] = useState('')
+  const [tmsg, setTmsg] = useState<null | { ok: boolean; t: string }>(null); const [tcode, setTcode] = useState(''); const [peek, setPeek] = useState<null | { code: string; owl: string }>(null); const [busy, setBusy] = useState(false); const [pickO, setPickO] = useState(''); const [acoins, setAcoins] = useState('1000'); const [aowl, setAowl] = useState('overlord')
   const timers = useRef<number[]>([])
-  useEffect(() => { setN(loadNest()); setSpent(store.get<any>('rw', { spent: 0 }).spent || 0); setReady(true); return () => timers.current.forEach(clearTimeout) }, [])
+  useEffect(() => { const m0 = loadNest(); setN(m0); if (m0.offers.length) sync(m0); setSpent(store.get<any>('rw', { spent: 0 }).spent || 0); setReady(true); return () => timers.current.forEach(clearTimeout) }, [])
   const save = (m: Nest) => { setN(m); saveNest(m) }
   const pay = (c: number) => { const rw = store.get<any>('rw', { spent: 0, owned: ['a-owl', 't-new'], avatar: 'a-owl', title: 't-new', frame: '' }); rw.spent = (rw.spent || 0) + c; store.set('rw', rw); setSpent(rw.spent) }
   const coins = Math.max(0, Math.floor(api.p.xp / 5) - spent)
@@ -90,7 +100,7 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     setHatch({ t, sp, dup: !!had, stars: had + 1, refund }); setStage(0); sfx('pop')
     const at = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms))
     at(1500, () => { setStage(1); sfx('pop') }); at(2300, () => { setStage(2); sfx('good') })
-    at(2800, () => { setStage(3); sfx(sp.r >= 3 ? 'level' : 'win'); confetti(sp.r >= 6 ? 5 : sp.r >= 5 ? 3.5 : sp.r >= 4 ? 2 : sp.r >= 2 ? 1.2 : 0.6) })
+    at(2800, () => { setStage(3); sfx(sp.r >= 3 ? 'level' : 'win'); confetti(sp.r >= 7 ? 7 : sp.r >= 6 ? 5 : sp.r >= 5 ? 3.5 : sp.r >= 4 ? 2 : sp.r >= 2 ? 1.2 : 0.6) })
   }
   function buy(t: Tier) {
     const c = cost(t)
@@ -108,10 +118,57 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
   async function redeem(e: React.FormEvent) {
     e.preventDefault(); const raw = code.trim(); if (!raw) return
     const h = await codeHash(raw), c = CODES[h]
+    if (h === ADMIN_HASH) { save({ ...n, adm: true }); setCode(''); setCodeMsg({ ok: true, t: '👑 Admin mode unlocked on this device. Scroll down to the Admin panel.' }); sfx('level'); confetti(3); return }
     if (!c) { setCodeMsg({ ok: false, t: 'That code does not work. Check the spelling.' }); sfx('bad'); return }
     if (n.codes.includes(h)) { setCodeMsg({ ok: false, t: 'You already used that code on this device.' }); sfx('bad'); return }
     pay(-c.coins); save({ ...n, codes: [...n.codes, h] }); setCode(''); setCodeMsg({ ok: true, t: `🎉 ${c.msg}` }); sfx('win'); confetti(c.coins >= 5000 ? 4 : 1.2)
   }
+  const rnd = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('')
+  const dec = (o: Record<string, number>, id: string) => { const m = { ...o, [id]: (o[id] || 0) - 1 }; if (m[id] <= 0) delete m[id]; return m }
+  const nm = (id: string) => OWLS.find(x => x.id === id)?.name || 'an owl'
+  async function sync(base: Nest) {
+    let m = base, msg = ''
+    for (const o of base.offers) {
+      try {
+        const r = await rpc('ow_trade_status', { p_code: o.code, p_secret: o.secret }); if (!r.ok) continue
+        if (r.status === 'claimed') { const c = await rpc('ow_trade_collect', { p_code: o.code, p_secret: o.secret }); if (!c.ok) continue
+          const back = OWLS.some(x => x.id === c.reply_owl) ? c.reply_owl as string : ''
+          m = { ...m, offers: m.offers.filter(x => x.code !== o.code), owls: back ? { ...m.owls, [back]: (m.owls[back] || 0) + 1 } : m.owls }
+          msg += back ? `A friend swapped ${nm(back)} for your ${nm(o.owl)}! ` : `A friend took your ${nm(o.owl)} as a gift. ` }
+        else if (r.status === 'cancelled' || r.status === 'collected') m = { ...m, offers: m.offers.filter(x => x.code !== o.code) }
+      } catch { break }
+    }
+    if (m !== base) { save(m); if (msg) { setTmsg({ ok: true, t: '🤝 ' + msg }); sfx('win') } }
+  }
+  async function offer() {
+    const id = pickO; if (!id || !n.owls[id] || busy) return; setBusy(true); setTmsg(null)
+    try { const secret = rnd(), r = await rpc('ow_trade_offer', { p_owl: id, p_secret: secret })
+      if (!r.ok) { setTmsg({ ok: false, t: r.error }); sfx('bad') } else { save({ ...n, owls: dec(n.owls, id), offers: [...n.offers, { code: r.code, owl: id, secret }] }); setPickO(''); setTmsg({ ok: true, t: `Offer made! Give your friend the code ${r.code}. ${nm(id)} is held safe until then.` }); sfx('good') }
+    } catch { setTmsg({ ok: false, t: 'Could not reach the trade desk. Check your internet and try again.' }) } finally { setBusy(false) }
+  }
+  async function cancelOffer(o: Offer) {
+    if (busy) return; setBusy(true)
+    try { const r = await rpc('ow_trade_cancel', { p_code: o.code, p_secret: o.secret })
+      if (r.ok) { save({ ...n, owls: { ...n.owls, [o.owl]: (n.owls[o.owl] || 0) + 1 }, offers: n.offers.filter(x => x.code !== o.code) }); setTmsg({ ok: true, t: `${nm(o.owl)} is back in your nest.` }); sfx('good') } else { setTmsg({ ok: false, t: r.error }); sync(n) }
+    } catch { setTmsg({ ok: false, t: 'Could not reach the trade desk.' }) } finally { setBusy(false) }
+  }
+  async function peekTrade(e: React.FormEvent) {
+    e.preventDefault(); const c = tcode.trim().toUpperCase(); if (!c || busy) return; setBusy(true); setTmsg(null); setPeek(null)
+    try { if (n.offers.some(o => o.code === c)) { setTmsg({ ok: false, t: 'That is your own offer. Share the code with a friend.' }); return }
+      const r = await rpc('ow_trade_peek', { p_code: c })
+      if (!r.ok) { setTmsg({ ok: false, t: r.error }); sfx('bad') } else if (r.status !== 'open') { setTmsg({ ok: false, t: 'That trade has already been taken or cancelled.' }); sfx('bad') } else if (!OWLS.some(x => x.id === r.owl)) { setTmsg({ ok: false, t: 'That owl is not in this version of the game yet.' }) } else setPeek({ code: c, owl: r.owl })
+    } catch { setTmsg({ ok: false, t: 'Could not reach the trade desk.' }) } finally { setBusy(false) }
+  }
+  async function takeTrade(give: string | null) {
+    if (!peek || busy) return; setBusy(true)
+    try { const r = await rpc('ow_trade_accept', { p_code: peek.code, p_give: give })
+      if (!r.ok) { setTmsg({ ok: false, t: r.error }); sfx('bad') } else {
+        let owls = { ...n.owls, [peek.owl]: (n.owls[peek.owl] || 0) + 1 }; if (give) owls = dec(owls, give)
+        save({ ...n, owls, buddy: n.buddy || peek.owl }); setTmsg({ ok: true, t: `🎉 ${nm(peek.owl)} joined your nest!` }); setPeek(null); setTcode(''); sfx('level'); confetti(OWLS.find(x => x.id === peek.owl)!.r >= 5 ? 4 : 1.5) }
+    } catch { setTmsg({ ok: false, t: 'Could not reach the trade desk.' }) } finally { setBusy(false) }
+  }
+  function adminCoins() { const a = Math.max(0, Math.min(1e9, Math.floor(Number(acoins) || 0))); if (!a) return; pay(-a); sfx('win'); setTmsg({ ok: true, t: `Added ${a.toLocaleString()} coins.` }) }
+  function adminOwl() { save({ ...n, owls: { ...n.owls, [aowl]: Math.min(9, (n.owls[aowl] || 0) + 1) }, buddy: n.buddy || aowl }); sfx('good'); setTmsg({ ok: true, t: `Gave you ${nm(aowl)}.` }) }
   function start() { save({ ...n, egg: { start: api.p.xp } }); sfx('good') }
   function close() { timers.current.forEach(clearTimeout); timers.current = []; setHatch(null) }
   if (!ready) return <section className="ow" />
@@ -141,6 +198,19 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     <form className="ow-code" onSubmit={redeem}><input value={code} onChange={e => { setCode(e.target.value); setCodeMsg(null) }} placeholder="Type a secret code" aria-label="Secret code" autoCapitalize="none" autoComplete="off" spellCheck={false} maxLength={30} /><button className="ow-btn" disabled={!code.trim()}>Redeem</button></form>
     {codeMsg && <p className={'ow-codemsg ' + (codeMsg.ok ? 'ok' : 'no')} role="status">{codeMsg.t}</p>}
 
+    <h3 className="ow-h">🔁 Trade owls</h3>
+    <p className="ow-note">Offer an owl to get a trade code. Your friend types the code to take it as a gift, or swaps one of theirs for it. Your owl is held safe until someone takes it.</p>
+    <div className="ow-code"><select value={pickO} onChange={e => setPickO(e.target.value)} aria-label="Owl to offer" className="ow-in"><option value="">Pick an owl to offer…</option>{OWLS.filter(o => n.owls[o.id]).map(o => <option key={o.id} value={o.id}>{o.name} ({RARITY[o.r][0]}) ×{n.owls[o.id]}</option>)}</select><button className="ow-btn" onClick={offer} disabled={!pickO || busy}>Make offer</button></div>
+    <form className="ow-code" onSubmit={peekTrade} style={{ marginTop: 10 }}><input value={tcode} onChange={e => { setTcode(e.target.value); setTmsg(null); setPeek(null) }} placeholder="Enter a trade code" aria-label="Trade code" autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={8} /><button className="ow-btn" disabled={!tcode.trim() || busy}>Look up</button></form>
+    {tmsg && <p className={'ow-codemsg ' + (tmsg.ok ? 'ok' : 'no')} role="status">{tmsg.t}</p>}
+    {peek && (() => { const sp = OWLS.find(x => x.id === peek.owl)!; return <div className="ow-card"><OwlArt sp={sp} size={80} still /><div className="ow-grow"><b>{sp.name}</b> <span className={'ow-tag' + tagC(sp.r)} style={tagS(sp.r)}>{RARITY[sp.r][0]}</span><ul className="ow-ul">{abil(sp, 1)}</ul>
+      <div className="ow-row"><button className="ow-btn sm" onClick={() => takeTrade(null)} disabled={busy}>🎁 Take as gift</button>{OWLS.some(o => n.owls[o.id]) && <select className="ow-in" aria-label="Swap with one of yours" value="" onChange={e => e.target.value && takeTrade(e.target.value)} disabled={busy}><option value="">🔁 Swap one of mine…</option>{OWLS.filter(o => n.owls[o.id]).map(o => <option key={o.id} value={o.id}>{o.name} ({RARITY[o.r][0]})</option>)}</select>}</div></div></div> })()}
+    {n.offers.length > 0 && <div className="ow-offers"><b>Your open offers</b>{n.offers.map(o => <div key={o.code} className="ow-offer"><span>{nm(o.owl)} · code <b className="ow-pin">{o.code}</b></span><button className="ow-btn ghost sm" onClick={() => { try { navigator.clipboard.writeText(o.code); sfx('pop') } catch {} }}>Copy</button><button className="ow-btn ghost sm" onClick={() => cancelOffer(o)} disabled={busy}>Cancel</button></div>)}<button className="ow-btn ghost sm" onClick={() => sync(n)}>🔄 Check my offers</button></div>}
+
+    {n.adm && <><h3 className="ow-h">👑 Admin panel</h3><div className="ow-offers"><div className="ow-code"><input type="number" min={1} max={1000000000} value={acoins} onChange={e => setAcoins(e.target.value)} aria-label="Coins to add" /><button className="ow-btn" onClick={adminCoins}>Add coins</button></div>
+      <div className="ow-code"><select className="ow-in" value={aowl} onChange={e => setAowl(e.target.value)} aria-label="Owl to give">{OWLS.map(o => <option key={o.id} value={o.id}>{o.name} ({RARITY[o.r][0]})</option>)}</select><button className="ow-btn" onClick={adminOwl}>Give owl</button></div>
+      <button className="ow-btn ghost sm" onClick={() => { save({ ...n, adm: false }); sfx('pop') }}>Lock admin</button></div></>}
+
     <h3 className="ow-h">📖 Owldex <small>({found}/{OWLS.length})</small></h3>
     <div className="ow-dex">{OWLS.map((s, i) => { const k = sk(s); return <button key={s.id} className={'ow-slot' + (k ? ' got' : '') + (buddy?.id === s.id ? ' buddy' : '')} style={{ ['--rc' as any]: RARITY[s.r][1], animationDelay: i * 25 + 'ms' }} onClick={() => { if (k) { setSel(s); setRename(n.pets[s.id]?.name || '') } }} aria-label={k ? s.name : 'Undiscovered owl'}>
       <OwlArt sp={k ? s : null} size={64} still /><span className="ow-nm">{k ? petName(n, s) : '???'}</span><span className="ow-rar" style={{ color: RARITY[s.r][1] }}>{RARITY[s.r][0]}</span>{k > 1 && <span className="ow-lv">★{Math.min(k, 6)}</span>}</button> })}</div>
@@ -148,7 +218,7 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
     {sel && <div className="ow-ov" onClick={() => setSel(null)}><div className="ow-modal" role="dialog" aria-modal="true" aria-label={sel.name} onClick={e => e.stopPropagation()} style={{ ['--rc' as any]: RARITY[sel.r][1] }}>
       <div className="ow-pet" key={hearts}><OwlArt sp={sel} size={140} />{hearts > 0 && <span className="ow-hearts" aria-hidden>💗💛💗</span>}</div>
       {say && <div className="ow-say" role="status">{say}</div>}
-      <h3>{petName(n, sel)}</h3><span className={'ow-tag' + (sel.r === 6 ? ' rb' : '')} style={{ background: RARITY[sel.r][1] }}>{RARITY[sel.r][0]} · {sel.name}</span>
+      <h3>{petName(n, sel)}</h3><span className={'ow-tag' + tagC(sel.r)} style={tagS(sel.r)}>{RARITY[sel.r][0]} · {sel.name}</span>
       <p className="ow-note">{mood(n, sel.id)[0]} {mood(n, sel.id)[1]} · Level ★{Math.min(n.owls[sel.id], 6)}{n.owls[sel.id] > 1 ? ` (found ${n.owls[sel.id]}×)` : ''}</p>
       <div className="ow-bond" aria-label={`Bond ${n.pets[sel.id]?.bond || 0} of 10`}>{Array.from({ length: 10 }, (_, i) => <i key={i} className={i < (n.pets[sel.id]?.bond || 0) ? 'on' : ''} />)}</div><small className="ow-note">Bond grows when you care for it each day. A stronger bond boosts its ability.</small>
       <div className="ow-abox"><b>⚡ {sel.ab.name}</b><ul>{abil(sel, power(n, sel.id))}</ul></div>
@@ -161,7 +231,7 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
 
     {hatch && <div className={'ow-ov hatch s' + stage} role="dialog" aria-modal="true" aria-label="Hatching" style={{ ['--rc' as any]: RARITY[hatch.sp.r][1] }} onClick={() => stage >= 3 && close()}>
       {stage < 3 ? <div className="ow-stage"><EggArt t={hatch.t} size={150} crack={stage} wobble /><p>{stage === 0 ? 'Something is moving inside…' : stage === 1 ? 'It is cracking!' : '💥'}</p></div>
-        : <div className="ow-reveal"><div className="ow-rays" aria-hidden /><OwlArt sp={hatch.sp} size={190} /><span className={'ow-tag big' + (hatch.sp.r === 6 ? ' rb' : '')} style={{ background: RARITY[hatch.sp.r][1] }}>{RARITY[hatch.sp.r][0]}</span><h2>{hatch.sp.name}</h2>
+        : <div className="ow-reveal"><div className="ow-rays" aria-hidden /><OwlArt sp={hatch.sp} size={190} /><span className={'ow-tag big' + tagC(hatch.sp.r)} style={tagS(hatch.sp.r)}>{RARITY[hatch.sp.r][0]}</span><h2>{hatch.sp.name}</h2>
           <p>{hatch.dup ? `Duplicate! Level ★${Math.min(hatch.stars, 6)} and ${hatch.refund} coins back.` : '✨ New owl added to your Owldex!'}</p><div className="ow-abox"><b>⚡ {hatch.sp.ab.name}</b><ul>{abil(hatch.sp, 1)}</ul></div><button className="ow-btn" onClick={close}>Awesome!</button></div>}</div>}
   </section>
 }
