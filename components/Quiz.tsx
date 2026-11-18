@@ -4,6 +4,7 @@ import { ai } from '@/lib/api'
 import { sfx, shareCard } from '@/lib/fx'
 import type { Miss } from '@/lib/progress'
 import { recordTopic, addMistake } from '@/lib/learn'
+import { tokens, spendToken } from '@/lib/powers'
 import type { Api } from './api'
 
 type Q = { q: string; options: string[]; answer: number; explain: string; topic?: string }
@@ -14,7 +15,7 @@ export default function Quiz({ api, onFinish, onCombo, level }: { api: Api; onFi
   const [phase, setPhase] = useState<'setup' | 'play' | 'done'>('setup'); const [qs, setQs] = useState<Q[]>([]); const [i, setI] = useState(0); const [sel, setSel] = useState<number | null>(null)
   const [diff, setDiff] = useState('medium'); const [count, setCount] = useState(5); const [timed, setTimed] = useState(false); const [left, setLeft] = useState(SECS)
   const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [combo, setCombo] = useState(0); const [right, setRight] = useState(0); const best = useRef(0); const retake = useRef(false)
-  const [wrongs, setWrongs] = useState<Q[]>([])
+  const [wrongs, setWrongs] = useState<Q[]>([]); const [hid, setHid] = useState<number[]>([])
 
   async function start() {
     setBusy(true); setErr('')
@@ -27,6 +28,10 @@ export default function Quiz({ api, onFinish, onCombo, level }: { api: Api; onFi
   const q = qs[i]
   function pick(j: number) {
     if (!q || sel !== null) return
+    if (j >= 0 && j !== q.answer && hid.length === 0 && tokens('second') > 0 && spendToken('second')) {
+      const others = q.options.map((_, k) => k).filter(k => k !== j && k !== q.answer).sort(() => Math.random() - 0.5).slice(0, 1)
+      setHid([j, ...others]); api.toast('🔁', 'Second Chance!', 'Two wrong options are gone. Try again.'); sfx('pop'); return
+    }
     const ok = j === q.answer; const nc = ok ? combo + 1 : 0
     const tp = q.topic || api.topic || 'General'; recordTopic(api.subj, tp, ok ? 1 : 0, 1)
     if (!ok) addMistake({ subj: api.subj, topic: tp, type: j === -1 ? 'Ran out of time' : 'Knowledge gap', note: q.explain, src: 'quiz', q: q.q, a: q.options[q.answer] })
@@ -34,7 +39,7 @@ export default function Quiz({ api, onFinish, onCombo, level }: { api: Api; onFi
     if (ok) { setRight(r => r + 1); onCombo(nc); if (retake.current) api.patch(p => ({ ...p, miss: p.miss.filter(m => m.q !== q.q) })) }
     else { setWrongs(w => [...w, q]); const m: Miss = { ...q, subj: api.subj }; api.patch(p => ({ ...p, miss: [m, ...p.miss.filter(x => x.q !== q.q)].slice(0, 40) })) }
   }
-  useEffect(() => { setLeft(SECS) }, [i])
+  useEffect(() => { setLeft(SECS); setHid([]) }, [i])
   useEffect(() => {
     if (phase !== 'play' || !timed || sel !== null) return
     if (left <= 0) { pick(-1); return }
@@ -69,7 +74,7 @@ export default function Quiz({ api, onFinish, onCombo, level }: { api: Api; onFi
     <div className="qbar"><i style={{ width: `${(i / qs.length) * 100}%` }} /></div>
     <div className="q qslide glow tilt" key={i}><h3>{q.q}</h3>
       {q.options.map((o, j) => { const cls = sel === null ? '' : j === q.answer ? ' right' : sel === j ? ' wrong' : ''
-        return <button key={j} className={'opt' + cls} disabled={sel !== null} onClick={() => pick(j)}><b>{String.fromCharCode(65 + j)}</b>{o}</button> })}
+        return <button key={j} className={'opt' + cls} disabled={sel !== null || hid.includes(j)} style={hid.includes(j) ? { opacity: 0.3, textDecoration: 'line-through' } : undefined} onClick={() => pick(j)}><b>{String.fromCharCode(65 + j)}</b>{o}</button> })}
       {sel !== null && <div className="why">{sel === -1 ? '⏰ Time is up. ' : ''}{q.explain}</div>}</div>
     {sel !== null && <div className="row" style={{ justifyContent: 'flex-end' }}><button className="btn" onClick={next}>{i + 1 >= qs.length ? 'See results' : 'Next question →'}</button></div>}
   </section>

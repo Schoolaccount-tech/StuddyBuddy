@@ -5,6 +5,7 @@ import { dayKey, GOAL } from '@/lib/progress'
 import { sfx, confetti } from '@/lib/fx'
 import type { Api } from './api'
 import { rpc } from '@/lib/league'
+import { POWERS, NIGHTS, usesPerDay, usedToday, markUsed, tokens, addToken, startXpMult, xpMultActive, applyNight, type PowerId } from '@/lib/powers'
 import { OWLS, RARITY, describe, power, buddyOf, petName, loadNest, saveNest, today, NEST_DEF, CODES, ADMIN_HASH, bountyToday, codeHash, adminHash, type Offer, type Sp, type Nest, type Fx } from '@/lib/owls'
 
 // Owl Nest: hatch eggs by studying (or buy them with coins) and collect owls of twelve rarities, from Common to Sovereign.
@@ -147,6 +148,20 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
       if (r.ok) { save({ ...n, owls: { ...n.owls, [o.owl]: (n.owls[o.owl] || 0) + 1 }, offers: n.offers.filter(x => x.code !== o.code) }); setTmsg({ ok: true, t: `${nm(o.owl)} is back in your nest.` }); sfx('good') } else { setTmsg({ ok: false, t: r.error }); sync(n) }
     } catch { setTmsg({ ok: false, t: 'Could not reach the trade desk.' }) } finally { setBusy(false) }
   }
+  const [pv, setPv] = useState(0); const bump = () => setPv(v => v + 1)
+  const myPowers = buddy ? Array.from(new Set(buddy.ab.fx.flatMap(f => f.k === 'power' ? f.ids : []))) as PowerId[] : []
+  const perDay = buddy ? usesPerDay(buddy.r) : 1
+  function usePower(id: PowerId) {
+    if (!buddy) return
+    if (id === 'night') { const cur = store.get('night', ''), idx = NIGHTS.findIndex(x => x[0] === cur), nx = NIGHTS[(idx + 1) % NIGHTS.length][0]; store.set('night', nx); applyNight(nx); sfx('good'); bump(); return }
+    if (usedToday(id) >= perDay) { api.toast('⏳', 'Power recharging', 'Come back tomorrow for more uses.'); sfx('bad'); return }
+    markUsed(id); bump(); sfx('win')
+    if (id === 'xpm') { const pct = 50 + 10 * buddy.r; startXpMult(pct); api.toast('✖️', `XP Multiplier +${pct}%`, 'For the next 30 minutes') }
+    else if (id === 'second') { addToken('second'); api.toast('🔁', 'Second Chance armed', 'Your next wrong quiz answer gets another try') }
+    else if (id === 'eagle') { addToken('eagle'); api.toast('🦅', 'Eagle Eyes armed', 'Use it after your next exam answer is marked'); onGo('exam') }
+    else if (id === 'freeze') window.dispatchEvent(new CustomEvent('wob:power', { detail: { id } }))
+    else { window.dispatchEvent(new CustomEvent('wob:power', { detail: { id } })) }
+  }
   const rkey = 'wob:troom'
   async function startTrade() {
     if (busy) return; setBusy(true); setTmsg(null)
@@ -196,6 +211,12 @@ export default function NestTab({ api, onGo }: { api: Api; onGo: (t: string) => 
       <div><h2>🥚 Owl Nest</h2>{buddy ? <><p><b>{petName(n, buddy)}</b> is your study buddy. {goalN >= GOAL ? 'Daily goal done. Hoot hoot! 🎉' : `Study ${GOAL - goalN} more thing${GOAL - goalN === 1 ? '' : 's'} today to reach your daily goal.`}</p>
         <p className="ow-ab">⚡ <b>{buddy.ab.name}</b>: {buddy.ab.fx.map(f => describe(f, bp)).join(' · ')}</p>{giftReady && <button className="ow-btn pulse sm" onClick={claim}>🎁 Collect today’s {gift} coins</button>}</> : <p>Hatch your first owl! Study to warm your free egg, or spend coins on a special egg.</p>}
         <div className="ow-chips"><span>🪙 <b>{coins}</b> coins</span><span>🦉 <b>{found}</b>/{OWLS.length} owls</span><span>🥚 <b>{n.hatched}</b> hatched</span><span title="Bounty owls give bonus XP for this today">🎯 Bounty: <b>{bountyToday()}</b></span></div></div></div>
+
+    {buddy && myPowers.length > 0 && <><h3 className="ow-h">⚡ Owl Powers <small>({petName(n, buddy)} gives you {perDay} use{perDay > 1 ? 's' : ''} of each per day)</small></h3>
+      <div className="pw-grid" key={pv}>{myPowers.map(id => { const P = POWERS.find(x => x.id === id)!, left = perDay - usedToday(id), nightNow = NIGHTS.find(x => x[0] === store.get('night', ''))?.[1], mx = id === 'xpm' ? xpMultActive() : null
+        return <div key={id} className="pw-card"><span className="pw-e">{P.e}</span><div className="ow-grow"><b>{P.name}</b><p>{P.desc}</p>
+          {id === 'night' && <small>Theme now: {nightNow}</small>}{mx && <small>🔥 +{mx.pct}% active for {Math.max(1, Math.ceil((mx.until - Date.now()) / 60000))} more min</small>}{id === 'second' && tokens('second') > 0 && <small>✅ Armed ({tokens('second')})</small>}{id === 'eagle' && tokens('eagle') > 0 && <small>✅ Armed ({tokens('eagle')})</small>}</div>
+          <button className="ow-btn sm" onClick={() => usePower(id)} disabled={P.daily && left <= 0}>{P.daily ? (left > 0 ? `Use (${left})` : 'Recharging') : 'Switch theme'}</button></div> })}</div></>}
 
     <h3 className="ow-h">🔥 Incubator</h3>
     <div className="ow-card">{!n.egg ? <><EggArt t={TIERS[0]} size={80} /><div className="ow-grow"><b>Free Study Egg</b><p>Start it, then earn {need} XP from quizzes, cards, exams and focus sessions. It hatches into an owl!</p></div><button className="ow-btn" onClick={start}>Start incubating</button></>

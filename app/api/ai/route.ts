@@ -90,6 +90,9 @@ How you answer:
     const marks = Math.max(1, Math.min(8, Number(body.marks) || scheme.length || 3))
     messages = [{ role: 'user', content: `Mark this student answer like an examiner.\nQuestion: ${str(body.question, 600)}\nMarking points: ${scheme.join(' | ')}\nMarks available: ${marks}\nStudent answer: ${str(body.answer, 1200)}\nReturn ONLY JSON: {"awarded": integer 0-${marks}, "feedback": two short encouraging sentences saying what earned marks and what was missing}.` }]
     body.__marks = marks
+  } else if (mode === 'eagle') {
+    max = 800
+    messages = [{ role: 'user', content: `A student answered an exam question. Find the parts of the answer that are wrong, vague or missing a key point. Return ONLY JSON: {"marks": [up to 5 objects {"text": an EXACT phrase copied word for word from the student answer (3 to 12 words), "why": under 18 words saying what is wrong}]}. If nothing is wrong return {"marks": []}.\nQuestion: ${str(body.question, 600)}\nMarking points: ${(Array.isArray(body.scheme) ? body.scheme : []).slice(0, 8).map((x: any) => str(x, 200)).join(' | ')}\nStudent answer: ${str(body.answer, 1200)}` }]
   } else if (mode === 'sheet') {
     max = 1800
     messages = [{ role: 'user', content: 'Make a one-page revision cheat sheet. Return ONLY JSON: {"title": string, "sections": [4 to 6 objects {"h": section heading, "points": [3 to 5 short bullet strings]}]}.' }]
@@ -132,6 +135,11 @@ How you answer:
       if (mode === 'mark') {
         const m = body.__marks as number
         return NextResponse.json({ data: { awarded: Math.max(0, Math.min(m, Math.round(Number(o.awarded) || 0))), marks: m, feedback: str(o.feedback, 500) } })
+      }
+      if (mode === 'eagle') {
+        const ans = str(body.answer, 1200)
+        const marks = (Array.isArray(o.marks) ? o.marks : []).filter((m: any) => m && typeof m.text === 'string' && m.text.length >= 2 && ans.includes(m.text)).slice(0, 6).map((m: any) => ({ text: m.text, why: str(m.why, 160) }))
+        return NextResponse.json({ data: { marks } })
       }
       if (mode === 'deck') {
         const cards = (Array.isArray(o.cards) ? o.cards : []).filter((c: any) => c && c.front && c.back).slice(0, 30).map((c: any) => ({ front: str(c.front, 200), back: str(c.back, 300) }))

@@ -15,6 +15,8 @@ import Decks from '@/components/Decks'
 import NestTab from '@/components/Nest'
 import { buddyBonus, coinReset } from '@/lib/owls'
 import Cards from '@/components/Cards'
+import PowerRun from '@/components/PowerRun'
+import { applyNight } from '@/lib/powers'
 import Exam from '@/components/Exam'
 import Focus from '@/components/Focus'
 import Tools from '@/components/Tools'
@@ -63,7 +65,7 @@ export default function Home() {
   const [toasts, setToasts] = useState<Toast[]>([]); const idc = useRef(0)
   const [msg, setMsg] = useState(''); const [mood, setMood] = useState<Mood>('idle'); const mt = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [sound, setSnd] = useState(true); const [accent, setAccent] = useState('owl'); const [mode, setMode] = useState<'auto' | 'light' | 'dark'>('auto')
-  const [lvUp, setLvUp] = useState<{ e: string; n: string } | null>(null); const [help, setHelp] = useState(false); const [inst, setInst] = useState<any>(null); const [planTab, setPlanTab] = useState<'tasks' | 'time'>('tasks')
+  const [run, setRun] = useState<null | 'quick' | 'scan' | 'recall'>(null); const [frz, setFrz] = useState(false); const [lvUp, setLvUp] = useState<{ e: string; n: string } | null>(null); const [help, setHelp] = useState(false); const [inst, setInst] = useState<any>(null); const [planTab, setPlanTab] = useState<'tasks' | 'time'>('tasks')
   const [tip, setTip] = useState(TIPS[0]); const [days, setDays] = useState<number | null>(null)
   const [cfg, setCfgS] = useState<Cfg>({ trail: 'sparkle', party: false, crown: false, remind: true }); const cfgRef = useRef(cfg); const [pal, setPal] = useState(false); const [share, setShare] = useState(false); const [board, setBoard] = useState(false); const [rb, setRb] = useState(false); const [spin, setSpin] = useState(false); const crestN = useRef(0)
   const tabsRef = useRef<HTMLDivElement>(null); const [ind, setInd] = useState({ l: 0, w: 0 })
@@ -76,11 +78,12 @@ export default function Home() {
     const rbo = store.get('rainbow', false); setRb(!!rbo); if (rbo) document.documentElement.dataset.rainbow = '1'
     applyLook(readLook())
     const bd = store.get('board', false); setBoard(!!bd); if (bd) document.documentElement.dataset.board = '1'
+    applyNight(store.get('night', '')); const onPow = (e: Event) => { const id = (e as CustomEvent).detail?.id; if (id === 'freeze') { document.documentElement.dataset.freeze = '1'; setFrz(true); setTab('focus') } else if (id === 'quick' || id === 'scan' || id === 'recall') setRun(id) }; window.addEventListener('wob:power', onPow)
     const l = load(); pRef.current = l; setP(l); setSnd(soundOn()); if (coinReset(l.xp)) setTimeout(() => toast('🪙', 'Coins have been reset', 'Everyone starts fresh. Your owls are safe!', true), 1500)
     const a = store.get('accent', 'owl'); setAccent(a); document.documentElement.dataset.accent = a
     const m = store.get<'auto' | 'light' | 'dark'>('mode', 'auto'); setMode(m); if (m !== 'auto') document.documentElement.dataset.theme = m
     say(l.nick ? `Welcome back, ${l.nick}!` : 'Hoot! Ready to learn something?', 'cheer', 5200)
-    const bip = (e: Event) => { e.preventDefault(); setInst(e) }; addEventListener('beforeinstallprompt', bip); return () => removeEventListener('beforeinstallprompt', bip)
+    const bip = (e: Event) => { e.preventDefault(); setInst(e) }; addEventListener('beforeinstallprompt', bip); return () => { removeEventListener('beforeinstallprompt', bip); window.removeEventListener('wob:power', onPow) }
   }, []) // eslint-disable-line
   useEffect(() => { const el = tabsRef.current?.querySelector<HTMLElement>('[aria-selected="true"]'); if (el) { setInd({ l: el.offsetLeft, w: el.offsetWidth }); el.scrollIntoView({ block: 'nearest', inline: 'center' }) } }, [tab])
 
@@ -183,6 +186,8 @@ export default function Home() {
     <div className="aurora" aria-hidden><i /><i /><i /></div><Starfield /><CursorTrail kind={rb ? 'rainbow' : cfg.trail} /><div className="rb-bar" aria-hidden /><Ripple /><Konami onHit={rainbow} />
     {pal && <Palette cmds={cmds} onClose={() => setPal(false)} />}
     {share && <Share onClose={() => setShare(false)} />}
+    {frz && <button className="frz-exit" onClick={() => { delete document.documentElement.dataset.freeze; setFrz(false) }}>❄️ Time Freeze on · Exit</button>}
+    {run && <PowerRun id={run} api={api} onClose={() => setRun(null)} />}
     {lvUp && <LevelUp e={lvUp.e} n={lvUp.n} onClose={() => setLvUp(null)} />}
     {help && <div className="help" onClick={() => setHelp(false)} role="dialog" aria-label="Keyboard shortcuts"><div className="help-in" onClick={e => e.stopPropagation()}><h3>Keyboard shortcuts</h3>
       <ul><li><kbd>1</kbd>–<kbd>9</kbd> Switch tabs</li><li><kbd>Ctrl</kbd>+<kbd>K</kbd> Command palette</li><li><kbd>↑↑↓↓←→←→BA</kbd> A surprise 🌈</li><li><kbd>M</kbd> Mute or unmute sounds</li><li><kbd>?</kbd> Show or hide this help</li><li><kbd>Esc</kbd> Close</li></ul><button className="btn" onClick={() => setHelp(false)}>Got it</button></div></div>}
