@@ -1,31 +1,49 @@
 // Celebrations, sounds and focus noise. Everything is generated in the browser, no files needed.
 export const reduced = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-export function confetti(power = 1) {
-  if (typeof document === 'undefined' || reduced()) return
-  const c = document.createElement('canvas')
-  c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999'
-  const dpr = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, H = window.innerHeight
-  c.width = W * dpr; c.height = H * dpr; document.body.appendChild(c)
-  const g = c.getContext('2d'); if (!g) { c.remove(); return }
-  g.scale(dpr, dpr)
-  const cols = ['#f2c500', '#ff5d8f', '#4cc9f0', '#7bd88f', '#a78bfa', '#ffffff']
-  const ps = Array.from({ length: Math.round(150 * power) }, () => ({
-    x: W / 2 + (Math.random() - 0.5) * 160, y: H * 0.62, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 17 - 6,
-    r: Math.random() * 6 + 3, c: cols[(Math.random() * cols.length) | 0], a: Math.random() * 6, va: (Math.random() - 0.5) * 0.4, sq: Math.random() < 0.5,
-  }))
-  let t = 0
-  const step = () => {
-    t++; g.clearRect(0, 0, W, H); let alive = 0
-    for (const p of ps) {
-      p.vy += 0.36; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.a += p.va; if (p.y < H + 20) alive++
-      g.save(); g.translate(p.x, p.y); g.rotate(p.a); g.fillStyle = p.c; g.globalAlpha = Math.max(0, 1 - t / 170)
-      if (p.sq) g.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); else { g.beginPath(); g.arc(0, 0, p.r / 1.5, 0, 7); g.fill() }
-      g.restore()
-    }
-    if (t < 180 && alive) requestAnimationFrame(step); else c.remove()
+// One shared overlay canvas and one animation loop for every effect, with a hard particle cap, so spamming never piles up canvases.
+type P = { x: number; y: number; vx: number; vy: number; g: number; life: number; max: number; c: string; s: number; sp?: HTMLCanvasElement; a: number; va: number; sq?: boolean }
+const MAX = 360
+let cv: HTMLCanvasElement | null = null, cg: CanvasRenderingContext2D | null = null, parts: P[] = [], sched: { at: number; fn: () => void }[] = [], raf = 0, frame = 0, W = 0, H = 0
+const sprites = new Map<string, HTMLCanvasElement>()
+function sprite(e: string): HTMLCanvasElement {
+  let c = sprites.get(e); if (c) return c
+  c = document.createElement('canvas'); c.width = c.height = 48; const g = c.getContext('2d'); if (g) { g.font = '38px serif'; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillText(e, 24, 26) }
+  if (sprites.size > 40) sprites.clear(); sprites.set(e, c); return c
+}
+const busy = () => parts.length > MAX * 0.75
+function tick() {
+  if (!cv || !cg) { raf = 0; return }
+  frame++; for (let i = sched.length - 1; i >= 0; i--) if (sched[i].at <= frame) { const f = sched[i].fn; sched.splice(i, 1); f() }
+  cg.clearRect(0, 0, W, H)
+  let w = 0
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i]; p.vy += p.g; p.vx *= 0.995; p.x += p.vx; p.y += p.vy; p.a += p.va; p.life++
+    if (p.life >= p.max || p.y > H + 40) continue
+    parts[w++] = p; cg.globalAlpha = Math.max(0, 1 - p.life / p.max)
+    if (p.sp) cg.drawImage(p.sp, p.x - p.s / 2, p.y - p.s / 2, p.s, p.s)
+    else { cg.fillStyle = p.c; if (p.sq) { cg.save(); cg.translate(p.x, p.y); cg.rotate(p.a); cg.fillRect(-p.s, -p.s / 2, p.s * 2, p.s); cg.restore() } else { cg.beginPath(); cg.arc(p.x, p.y, p.s, 0, 7); cg.fill() } }
   }
-  requestAnimationFrame(step)
+  parts.length = w; cg.globalAlpha = 1
+  if (parts.length || sched.length) raf = requestAnimationFrame(tick); else { cv.remove(); cv = null; cg = null; raf = 0 }
+}
+function start(): boolean {
+  if (typeof document === 'undefined' || reduced() || document.hidden) return false
+  if (!cv) {
+    cv = document.createElement('canvas'); cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999'
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1); W = window.innerWidth; H = window.innerHeight
+    cv.width = W * dpr; cv.height = H * dpr; document.body.appendChild(cv); cg = cv.getContext('2d'); if (!cg) { cv.remove(); cv = null; return false } cg.scale(dpr, dpr); frame = 0
+  }
+  if (!raf) raf = requestAnimationFrame(tick)
+  return true
+}
+const add = (p: P) => { if (parts.length < MAX) parts.push(p) }
+
+export function confetti(power = 1) {
+  if (busy() || !start()) return
+  const cols = ['#f2c500', '#ff5d8f', '#4cc9f0', '#7bd88f', '#a78bfa', '#ffffff']
+  const n = Math.min(120, Math.round(90 * power))
+  for (let i = 0; i < n; i++) add({ x: W / 2 + (Math.random() - 0.5) * 160, y: H * 0.62, vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 17 - 6, g: 0.36, life: 0, max: 120 + Math.random() * 40, c: cols[(Math.random() * cols.length) | 0], s: Math.random() * 3 + 2, a: Math.random() * 6, va: (Math.random() - 0.5) * 0.4, sq: Math.random() < 0.5 })
 }
 
 let ctx: AudioContext | null = null
@@ -78,34 +96,15 @@ export function shareCard(title: string, big: string, line: string, who: string)
   c.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'study-buddy-score.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000) })
 }
 
-// Fireworks, emoji rain and star bursts on one lightweight canvas.
+// Fireworks, emoji rain and star bursts, on the shared canvas.
 export function celebrate(kind: 'fireworks' | 'emoji' | 'stars', emoji = '⭐') {
-  if (typeof document === 'undefined' || reduced()) return
-  const c = document.createElement('canvas')
-  c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999'
-  const dpr = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, H = window.innerHeight
-  c.width = W * dpr; c.height = H * dpr; document.body.appendChild(c)
-  const g = c.getContext('2d'); if (!g) { c.remove(); return }
-  g.scale(dpr, dpr)
-  type P = { x: number; y: number; vx: number; vy: number; g: number; life: number; max: number; c: string; e?: string; s: number }
-  const ps: P[] = []; const cols = ['#f2c500', '#ff5d8f', '#4cc9f0', '#7bd88f', '#a78bfa', '#ffffff']
-  const burst = (x: number, y: number, n: number, col: string, em?: string) => { for (let i = 0; i < n; i++) { const a = (Math.PI * 2 * i) / n + Math.random() * 0.2, sp = Math.random() * 6 + 3; ps.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.12, life: 0, max: 70 + Math.random() * 30, c: col, e: em, s: em ? 22 : 2.6 }) } }
-  const plan: [number, () => void][] = []
-  if (kind === 'fireworks') for (let i = 0; i < 6; i++) plan.push([i * 16, () => burst(W * (0.15 + Math.random() * 0.7), H * (0.15 + Math.random() * 0.4), 46, cols[i % cols.length])])
-  if (kind === 'stars') plan.push([0, () => burst(W / 2, H * 0.45, 28, '#fff', emoji)], [14, () => burst(W / 2, H * 0.45, 22, '#fff', emoji)])
-  if (kind === 'emoji') for (let i = 0; i < 46; i++) plan.push([Math.floor(Math.random() * 50), () => ps.push({ x: Math.random() * W, y: -30, vx: (Math.random() - 0.5) * 1.2, vy: Math.random() * 3 + 2.5, g: 0.02, life: 0, max: 200, c: '#fff', e: emoji, s: 24 + Math.random() * 18 })])
-  let t = 0
-  const step = () => {
-    t++; plan.filter(x => x[0] === t).forEach(x => x[1]()); g.clearRect(0, 0, W, H)
-    for (const p of ps) {
-      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life++
-      g.globalAlpha = Math.max(0, 1 - p.life / p.max)
-      if (p.e) { g.font = `${p.s}px serif`; g.fillText(p.e, p.x, p.y) } else { g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, p.s, 0, 7); g.fill() }
-    }
-    g.globalAlpha = 1
-    if (t < 260) requestAnimationFrame(step); else c.remove()
-  }
-  requestAnimationFrame(step)
+  if (busy() || !start()) return
+  const cols = ['#f2c500', '#ff5d8f', '#4cc9f0', '#7bd88f', '#a78bfa', '#ffffff'], sp = emoji ? sprite(emoji) : undefined
+  const burst = (x: number, y: number, n: number, col: string, em?: boolean) => { for (let i = 0; i < n; i++) { const a = (Math.PI * 2 * i) / n + Math.random() * 0.2, v = Math.random() * 6 + 3; add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.12, life: 0, max: 60 + Math.random() * 25, c: col, s: em ? 22 : 2.4, sp: em ? sp : undefined, a: 0, va: 0 }) } }
+  const at = (f: number, fn: () => void) => sched.push({ at: frame + f, fn })
+  if (kind === 'fireworks') for (let i = 0; i < 4; i++) at(i * 14, () => burst(W * (0.15 + Math.random() * 0.7), H * (0.15 + Math.random() * 0.4), 34, cols[i % cols.length]))
+  if (kind === 'stars') { at(0, () => burst(W / 2, H * 0.45, 20, '#fff', true)); at(12, () => burst(W / 2, H * 0.45, 14, '#fff', true)) }
+  if (kind === 'emoji') for (let i = 0; i < 26; i++) at(Math.floor(Math.random() * 50), () => add({ x: Math.random() * W, y: -30, vx: (Math.random() - 0.5) * 1.2, vy: Math.random() * 3 + 2.5, g: 0.02, life: 0, max: 170, c: '#fff', s: 20 + Math.random() * 14, sp, a: 0, va: 0 }))
 }
 
 /** Turn markdown and chat symbols into plain words so the voice never says "hashtag" or "asterisk". */

@@ -112,7 +112,7 @@ export default function Home() {
   }) // eslint-disable-line
 
   function say(m: string, mo: Mood = 'cheer', ms = 4000) { setMsg(m); setMood(mo); clearTimeout(mt.current); mt.current = setTimeout(() => { setMsg(''); setMood('idle') }, ms) }
-  function toast(e: string, title: string, sub = '', big = false) { const id = ++idc.current; setToasts(t => [...t, { id, e, title, sub, big }]); setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), big ? 5200 : 3400) }
+  function toast(e: string, title: string, sub = '', big = false) { const id = ++idc.current; setToasts(t => [...t, { id, e, title, sub, big }].slice(-4)); setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), big ? 5200 : 3400) }
   function patch(f: (p: Prog) => Prog) { const n = f(pRef.current); pRef.current = n; setP(n); save(n) }
   function award(ev: Ev) {
     try {
@@ -139,9 +139,9 @@ export default function Home() {
   function setCfg(c: Partial<Cfg>) { const n = { ...cfgRef.current, ...c }; cfgRef.current = n; setCfgS(n); store.set('cfg', n) }
   function toggleBoard() { const n = !board; setBoard(n); store.set('board', n); if (n) document.documentElement.dataset.board = '1'; else delete document.documentElement.dataset.board; sfx('pop'); say(n ? 'Big screen mode on 📺' : 'Big screen mode off', 'cheer', 2500) }
   function fullscreen() { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen() } catch {} }
-  function rainbow() { const n = !document.documentElement.dataset.rainbow; setRb(n); store.set('rainbow', n); if (n) document.documentElement.dataset.rainbow = '1'; else delete document.documentElement.dataset.rainbow; celebrate(n ? 'fireworks' : 'stars', '🌈'); sfx(n ? 'level' : 'pop'); say(n ? 'Rainbow mode ON! 🌈' : 'Rainbow mode off', 'cheer', 3500); if (n && !store.get('rbxp', false)) { store.set('rbxp', true); award({ k: 'bonus', xp: 5 }) } }
+  function rainbow() { const nw = Date.now(); if (nw - ((window as any).__rb || 0) < 700) return; (window as any).__rb = nw; const n = !document.documentElement.dataset.rainbow; setRb(n); store.set('rainbow', n); if (n) document.documentElement.dataset.rainbow = '1'; else delete document.documentElement.dataset.rainbow; celebrate(n ? 'fireworks' : 'stars', '🌈'); sfx(n ? 'level' : 'pop'); say(n ? 'Rainbow mode ON! 🌈' : 'Rainbow mode off', 'cheer', 3500); if (n && !store.get('rbxp', false)) { store.set('rbxp', true); award({ k: 'bonus', xp: 5 }) } }
   function crestClick() { setSpin(true); setTimeout(() => setSpin(false), 900); sfx('pop'); crestN.current++; if (crestN.current >= 5) { crestN.current = 0; rainbow() } }
-  function floatXP(n: number) { try { const el = document.querySelector('.xp'); if (!el) return; const r = el.getBoundingClientRect(), d = document.createElement('div'); d.className = 'xpfloat'; d.textContent = `+${n} XP`; d.style.left = r.left + r.width / 2 + 'px'; d.style.top = r.bottom + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1500) } catch {} }
+  function floatXP(n: number) { try { if (document.querySelectorAll('.xpfloat').length > 3) return; const el = document.querySelector('.xp'); if (!el) return; const r = el.getBoundingClientRect(), d = document.createElement('div'); d.className = 'xpfloat'; d.textContent = `+${n} XP`; d.style.left = r.left + r.width / 2 + 'px'; d.style.top = r.bottom + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1500) } catch {} }
   function toggleSound() { setSnd(s => { setSound(!s); if (!s) sfx('pop'); return !s }) }
   useEffect(() => { try { const q = new URLSearchParams(location.search).get('live'); if (q && /^\d{6}$/.test(q)) { sessionStorage.setItem('wob:livepin', q); setTab('league'); history.replaceState(null, '', location.pathname) } } catch {} return undefined }, [])
   function changeTab(t: Tab) { prevTab.current = TABS.findIndex(x => x[0] === tab); setTab(t); sfx('pop'); if (t !== 'focus') noise(false); if (cfgRef.current.party) confetti(0.5) }

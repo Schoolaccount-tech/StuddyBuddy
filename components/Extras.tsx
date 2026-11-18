@@ -16,12 +16,14 @@ export function CursorTrail({ kind }: { kind: Trail }) {
     const g = c.getContext('2d'); if (!g) return
     type P = { x: number; y: number; vx: number; vy: number; life: number; h: number; s: number }
     let ps: P[] = [], id = 0, last = 0
+    const heart = document.createElement('canvas'); heart.width = heart.height = 48; { const hg = heart.getContext('2d'); if (hg) { hg.font = '38px serif'; hg.textBaseline = 'middle'; hg.textAlign = 'center'; hg.fillText('💖', 24, 26) } }
     const size = () => { c.width = window.innerWidth; c.height = window.innerHeight }
     size(); window.addEventListener('resize', size)
     const mv = (e: PointerEvent) => {
       const now = performance.now(); if (now - last < 18) return; last = now
       for (let i = 0; i < 2; i++) ps.push({ x: e.clientX, y: e.clientY, vx: (Math.random() - 0.5) * 1.6, vy: (Math.random() - 0.5) * 1.6 - 0.4, life: 1, h: (now / 4 + i * 60) % 360, s: 3 + Math.random() * 5 })
-      if (ps.length > 140) ps = ps.slice(-140)
+      if (ps.length > 70) ps = ps.slice(-70)
+      if (!id && !document.hidden) id = requestAnimationFrame(draw)
     }
     window.addEventListener('pointermove', mv)
     const star = (x: number, y: number, r: number) => { g.beginPath(); for (let i = 0; i < 8; i++) { const a = (i * Math.PI) / 4, rr = i % 2 ? r * 0.4 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr) } g.closePath(); g.fill() }
@@ -30,13 +32,12 @@ export function CursorTrail({ kind }: { kind: Trail }) {
       ps = ps.filter(p => p.life > 0.02)
       for (const p of ps) {
         p.x += p.vx; p.y += p.vy; p.life *= 0.93; g.globalAlpha = p.life
-        if (kind === 'hearts') { g.font = `${p.s * 3}px serif`; g.fillText('💖', p.x, p.y) }
+        if (kind === 'hearts') g.drawImage(heart, p.x - p.s * 1.5, p.y - p.s * 1.5, p.s * 3, p.s * 3)
         else { g.fillStyle = kind === 'rainbow' ? `hsl(${p.h},95%,60%)` : kind === 'gold' ? '#ffd23f' : 'hsl(48,100%,70%)'; star(p.x, p.y, p.s * p.life + 1) }
       }
-      g.globalAlpha = 1; id = requestAnimationFrame(draw)
+      g.globalAlpha = 1; id = ps.length ? requestAnimationFrame(draw) : 0
     }
-    id = requestAnimationFrame(draw)
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', size); window.removeEventListener('pointermove', mv) }
+    return () => { cancelAnimationFrame(id); id = 0; window.removeEventListener('resize', size); window.removeEventListener('pointermove', mv) }
   }, [kind])
   return <canvas ref={ref} className="trail" aria-hidden />
 }
